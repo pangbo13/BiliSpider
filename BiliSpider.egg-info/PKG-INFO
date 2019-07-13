@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: BiliSpider
+Version: 0.1.1
+Summary: A spider of Bilibili
+Home-page: https://github.com/pangbo13/BiliSpider/
+Author: pangbo
+Author-email: 373108669@qq.com
+License: UNKNOWN
+Description: # BiliSpider
+        A spider of BiliBili.
+        
+        基于python3编写的一个bilibili多线程爬虫。
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown

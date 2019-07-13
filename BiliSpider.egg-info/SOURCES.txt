@@ -1,0 +1,8 @@
+README.md
+setup.py
+BiliSpider/BiliSpider.py
+BiliSpider/__init__.py
+BiliSpider.egg-info/PKG-INFO
+BiliSpider.egg-info/SOURCES.txt
+BiliSpider.egg-info/dependency_links.txt
+BiliSpider.egg-info/top_level.txt
