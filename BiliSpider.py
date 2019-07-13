@@ -172,37 +172,3 @@ spider1.prepare()
 spider1.start()
 spider1.wait()
 spider1.global_var['file'].close()
-#################################
-# while True:
-	# cmd = input('>>>')
-	# exec(cmd)
-#################################	
-
-# #处理错误
-# for pages in errorlist:
-	# try:
-		# res = requests.get('https://api.bilibili.com/x/web-interface/newlist?rid=30&pn={}'.format(pages))
-	# except:
-		# try:
-			# time.sleep(5)
-			# res = requests.get('https://api.bilibili.com/x/web-interface/newlist?rid=30&pn={}'.format(pages))
-		# except:
-			# Info('Spider','ERROR','第{}页连接超时'.format(pages))
-			# time.sleep(2)
-			# continue
-	# out = ''
-# #解析数据
-	# for vinfo in res.json()['data']['archives']:
-		# out += 	repr(vinfo['stat']['aid']) + ','
-		# out +=  repr(vinfo['stat']['view']) +  ','
-		# out +=  repr(vinfo['stat']['danmaku']) +  ','
-		# out +=  repr(vinfo['stat']['reply']) +  ','
-		# out +=  repr(vinfo['stat']['favorite']) +  ','
-		# out +=  repr(vinfo['stat']['coin']) +  ','
-		# out +=  repr(vinfo['stat']['share']) +  ','
-		# out +=  repr(vinfo['stat']['like']) +  ','
-		# out +=  repr(vinfo['stat']['dislike']) +  '\n'
-	# f.write(out)
-
-# f.close()
-# Info('SPIDER','INFO','主线程结束')
