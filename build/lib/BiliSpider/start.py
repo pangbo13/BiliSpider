@@ -1,7 +1,6 @@
 # coding=utf-8 #
 import argparse
 
-            super().__init__()
 def start():
     #av号解析函数
     def aid_decode(url):
