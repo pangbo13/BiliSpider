@@ -45,7 +45,10 @@ class Spider():
 
 		#配置控制台日志输出
 		console = logging.StreamHandler()
-		console.setLevel(logging.DEBUG)
+		if config.get('output',1) != 1 :
+			console.setLevel(logging.DEBUG)
+		else:
+			console.setLevel(logging.FATAL)
 		console.setFormatter(logging.Formatter(fmt = FORMAT,datefmt='%H:%M:%S'))
 		logger.addHandler(console)
 
@@ -75,7 +78,7 @@ class Spider():
 		#输出当前时间
 		file.write(time.ctime(time.time()) + '\n')
 		#导入请求头
-		from headers import Api_headers as headers
+		from .headers import Api_headers as headers
 		#封装全局变量
 		self.global_var ={
 			'threadLock' : threadLock,

@@ -19,6 +19,6 @@ setuptools.setup(
         'Operating System :: OS Independent',
         ],
     entry_points = {'console_scripts': [
-        'BiliSpider = BiliSpider.__mian__:main',
+        'BiliSpider = BiliSpider.__init__:main',
         ],},
     )
