@@ -1,0 +1,3 @@
+[console_scripts]
+BiliSpider = BiliSpider.__mian__:main
+
