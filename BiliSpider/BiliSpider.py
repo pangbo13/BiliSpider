@@ -15,9 +15,12 @@ class Spider():
 
 		self.url = 'https://api.bilibili.com/x/web-interface/newlist?rid={}&pn={}'.format(rid,'{}')
 		self.rid = rid
+		if rid not in config['tid']:
+			self.logger.warning('分区id不一致，请检查设置')
 		self.thread_num = config.get('thread_num',2)
 
 		self.logger.debug("构造完成")
+
 	def set_logger(self,config):
 
 		#配置日志记录
@@ -32,6 +35,7 @@ class Spider():
 		else:
 			logger.setLevel(level = logging.INFO)
 
+		#配置输出日志文件
 		file_log_level = (0,logging.ERROR,logging.DEBUG)[config.get('logmode',1)]
 		if file_log_level != 0 and config.get('debug',False):
 			handler = logging.FileHandler(FILENAME,encoding='utf-8')
@@ -39,11 +43,18 @@ class Spider():
 			handler.setFormatter(logging.Formatter(fmt = FORMAT,datefmt='%H:%M:%S'))
 			logger.addHandler(handler)
 
-		
+		#配置控制台日志输出
 		console = logging.StreamHandler()
 		console.setLevel(logging.DEBUG)
 		console.setFormatter(logging.Formatter(fmt = FORMAT,datefmt='%H:%M:%S'))
 		logger.addHandler(console)
+
+		#配置进度条
+		if config.get('output',1) == 1:
+			self.SHOW_BAR = True
+		else :
+			self.SHOW_BAR = False
+
 		#日志配置完成
 		logger.info("日志配置完毕")
 
@@ -214,20 +225,24 @@ class Spider():
 			self.father = father
 			self.father.Info(self.name,'DEBUG','线程已创建！')
 		def run(self):
+			#设置进度条长度
+			BAR_LENGTH = 50
+			#全局变量
 			var = self.father.global_var
 			queue = var['queue']
 			f = var['file']
 			threads = var['threads'][1:]
 			time.sleep(1)
 			while bool(sum(t.isAlive() for t in threads)):
-				#percentage = (var['now_pages']-1)/var['all_pages']
-				#count = int(percentage*80)
-				#print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (80 - count),round(percentage*100,2)),end = '')
+				if self.father.SHOW_BAR :
+					percentage = (var['now_pages']-1)/var['all_pages']
+					count = int(percentage*BAR_LENGTH)
+					print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (BAR_LENGTH - count),round(percentage*100,2)),end = '')
 				time.sleep(0.5)
 				while not queue.empty():
 					f.write(queue.get(block=False))
 			f.close()
-			print('\r[{}] --100%  '.format('#'*80))
+			print('\r[{}] --100%  '.format('#'*BAR_LENGTH))
 			#global threads,IF_finish
 			
 			# while IF_finish == 0 :

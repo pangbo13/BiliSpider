@@ -98,9 +98,13 @@ if args.saveconfig:
 else :
     del config['saveconfig']
 
+if args.debug :
+    config['output'] = 2
+
 if args.tid:
-    print('tid=',tuple(map(int,args.tid.split(','))))
-    config['tid'] = args.tid.split(',')
+    print('tid=',tuple(set(map(int,args.tid.split(',')))))
+    config['tid'] = tuple(set(map(int,args.tid.split(','))))
+
 if args.url and not args.tid : 
     print('url=',args.url)
     tid_info = get_tid_by_url(aid_decode(args.url))
@@ -109,6 +113,10 @@ if args.url and not args.tid :
 del config['url']
 
 
-if __name__=='__main__':
-    #print(aid_decode(input()))
-    print(config)
+
+#print(aid_decode(input()))
+print(config)
+import BiliSpider
+for tid in config['tid']:
+	spider = BiliSpider.Spider(tid,config)
+	spider.auto_run()
