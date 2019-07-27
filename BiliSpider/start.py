@@ -89,17 +89,6 @@ if not args.tid and not args.url:
     parser.print_help()
     exit()
 
-# if args.tid:
-#     config['tid'] = args.tid
-
-# if args.debug:
-#     config['debug'] = True
-#     config['output'] = args.output
-# else :
-#     config['debug'] = False
-#     config['output'] = args.output
-
-
 
 if args.saveconfig:
     import json
