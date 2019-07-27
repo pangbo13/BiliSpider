@@ -3,4 +3,3 @@
 
 name = 'BiliSpider'
 from BiliSpider.BiliSpider import *
-#from .__main__ import *
