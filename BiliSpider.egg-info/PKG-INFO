@@ -1,11 +1,16 @@
 Metadata-Version: 2.1
+<<<<<<< Updated upstream
 Name: BiliSpider
 Version: 0.1.1
+=======
+Name: bilispider
+Version: 0.1.4
+>>>>>>> Stashed changes
 Summary: A spider of Bilibili
 Home-page: https://github.com/pangbo13/BiliSpider/
 Author: pangbo
 Author-email: 373108669@qq.com
-License: UNKNOWN
+License: MIT License
 Description: # BiliSpider
         A spider of BiliBili.
         
