@@ -1,7 +1,7 @@
 import tkinter as tk
 
 class gui_config():
-	def __init__(self,config=None):
+	def __init__(self,config={}):
 		root = tk.Tk()
 		self.root = root
 		root.title('设置')
@@ -22,10 +22,11 @@ class gui_config():
 		es_frame.pack()
 		buttom_frame = tk.Frame(root)
 		tk.Button(buttom_frame,text='开始',width=10).pack(side=tk.RIGHT,fill=tk.X,padx=50)
-		tk.Button(buttom_frame,text='关闭',width=10).pack(side=tk.RIGHT,fill=tk.X,padx=50)
+		tk.Button(buttom_frame,text='关闭',width=10,command=root.quit).pack(side=tk.RIGHT,fill=tk.X,padx=50)
 		buttom_frame.pack()
 		root.mainloop()
 
+		self.config = config
 
-if __name__ == "__main__":
-	gui_config()
+	def get(self):
+		return self.config

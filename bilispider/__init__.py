@@ -3,7 +3,7 @@
 def main():
     from .start import start
     start()
-version = '0.1.4'
+version = '0.1.5'
 name = 'bilispider'
 
 from .bilispider import *

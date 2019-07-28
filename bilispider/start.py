@@ -82,7 +82,7 @@ def start():
 
     if args.gui:
         from .gui import gui_config
-        gui_config()
+        config = gui_config(config).get()
     else :
         del config['gui']
 
