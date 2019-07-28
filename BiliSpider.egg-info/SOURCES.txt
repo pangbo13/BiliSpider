@@ -1,13 +1,5 @@
 README.md
 setup.py
-<<<<<<< Updated upstream
-BiliSpider/BiliSpider.py
-BiliSpider/__init__.py
-BiliSpider.egg-info/PKG-INFO
-BiliSpider.egg-info/SOURCES.txt
-BiliSpider.egg-info/dependency_links.txt
-BiliSpider.egg-info/top_level.txt
-=======
 bilispider/__init__.py
 bilispider/bilispider.py
 bilispider/gui.py
@@ -18,4 +10,3 @@ bilispider.egg-info/SOURCES.txt
 bilispider.egg-info/dependency_links.txt
 bilispider.egg-info/entry_points.txt
 bilispider.egg-info/top_level.txt
->>>>>>> Stashed changes
