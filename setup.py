@@ -1,11 +1,18 @@
 import setuptools
 
+with open('version.txt','r') as f:
+    version = f.read()
+
+with open('./bilispider/version.py','w') as f:
+    out = r'version = ' + version
+    f.write(version)
+
 with open('README.md','r',encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name = 'bilispider',
-    version = '0.1.4',
+    version = 'version',
     license = 'MIT License',
     author = 'pangbo',
     author_email = '373108669@qq.com',

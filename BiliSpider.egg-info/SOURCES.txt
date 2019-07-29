@@ -5,6 +5,8 @@ bilispider/bilispider.py
 bilispider/gui.py
 bilispider/headers.py
 bilispider/start.py
+bilispider/tools.py
+bilispider/version.py
 bilispider.egg-info/PKG-INFO
 bilispider.egg-info/SOURCES.txt
 bilispider.egg-info/dependency_links.txt
