@@ -99,7 +99,7 @@ def start():
     else :
         del config['gui']
 
-    if not args.tid and not args.url:
+    if not config['tid'] and not args.url:
         parser.print_help()
         exit()
 
@@ -116,10 +116,12 @@ def start():
         config['output'] = 2
 
     if args.tid:
-        #
+        #将获取的字符串以逗号拆分
+        #再通过map函数迭代转化为int
+        #转化为set以去除重复项
         config['tid'] = tuple(set(map(int,args.tid.split(','))))
 
-    if args.url and not args.tid : 
+    if args.url and not config['tid'] : 
         tid_info = get_tid_by_url(aid_decode(args.url))
         config['tid'] = int(tid_info[0])
         print('已获取 {} 分区tid: {}'.format(tid_info[1],tid_info[0]))
@@ -129,5 +131,6 @@ def start():
     print(config)
     from .bilispider import spider
     for tid in config['tid']:
+        #实例化
         spider = spider(tid,config)
         spider.auto_run()

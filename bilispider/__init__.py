@@ -4,8 +4,7 @@ def main():
     from .start import start
     start()
 
-with open('verson','r') as f:
-    version = f.read()
+from .version import version
 name = 'bilispider'
 
 from .bilispider import *

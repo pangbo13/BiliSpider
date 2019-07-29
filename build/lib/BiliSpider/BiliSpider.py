@@ -2,7 +2,7 @@
 import requests
 import time
 import threading
-import sys
+import os
 import queue
 import logging
 
@@ -11,6 +11,12 @@ class spider():
 	#构造函数
 	def __init__(self,rid,config={}):
 		
+		#创建必要文件夹
+		if not os.path.exists(r'./log'):
+			os.makedirs(r'./log')
+		if not os.path.exists(r'./data'):
+			os.makedirs(r'./data')
+
 		self.set_logger(config)
 
 		self.url = 'https://api.bilibili.com/x/web-interface/newlist?rid={}&pn={}'.format(rid,'{}')

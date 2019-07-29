@@ -3,7 +3,8 @@ import setuptools
 with open('version.txt','r') as f:
     version = f.read()
 
-with open('./bilispider/version','w'):
+with open('./bilispider/version.py','w') as f:
+    out = r'version = ' + version
     f.write(version)
 
 with open('README.md','r',encoding='utf-8') as fh:
