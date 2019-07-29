@@ -3,7 +3,9 @@
 def main():
     from .start import start
     start()
-version = '0.1.5'
+
+with open('verson','r') as f:
+    version = f.read()
 name = 'bilispider'
 
 from .bilispider import *
