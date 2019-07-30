@@ -1,6 +1,7 @@
 README.md
 setup.py
 bilispider/__init__.py
+bilispider/__main__.py
 bilispider/bilispider.py
 bilispider/gui.py
 bilispider/headers.py

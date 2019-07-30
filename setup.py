@@ -4,8 +4,8 @@ with open('version.txt','r') as f:
     version = f.read()
 
 with open('./bilispider/version.py','w') as f:
-    out = r'version = ' + version
-    f.write(version)
+    out = r'version = ' + repr(version)
+    f.write(out)
 
 with open('README.md','r',encoding='utf-8') as fh:
     long_description = fh.read()

@@ -49,3 +49,17 @@ def aid_decode(url):
 	else:
 		raise URL_ERROR()
 	return url
+
+def check_update():
+	from .version import version
+	from requests import get
+	from os import system
+	print('正在检查更新')
+	res = get(r'https://raw.githubusercontent.com/pangbo13/BiliSpider/master/version.txt')
+	latest_version = res.text
+	now_version = version
+	if latest_version != now_version:
+		print('发现更新：' + latest_version)
+		system(r'pip install https://github.com/pangbo13/BiliSpider/blob/master/dist/bilispider-{}-py3-none-any.whl?raw=true'.format(latest_version))
+
+

@@ -1,2 +1,2 @@
-from bilispider.gui import gui_config
-print(gui_config().get())
+from bilispider.tools import check_update
+check_update()
