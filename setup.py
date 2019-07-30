@@ -12,7 +12,7 @@ with open('README.md','r',encoding='utf-8') as fh:
 
 setuptools.setup(
     name = 'bilispider',
-    version = 'version',
+    version = version,
     license = 'MIT License',
     author = 'pangbo',
     author_email = '373108669@qq.com',
