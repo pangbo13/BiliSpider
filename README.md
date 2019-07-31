@@ -12,6 +12,7 @@ A spider of BiliBili.
 ## 使用
 ### Windows
 > 在cmd中使用bilispider启动，输入bilispider –help以查看帮助
+>
 > 在cmd中使用python -m bilispider
 ## Linux
 > 在终端中使用python3 -m bilispider 启动
