@@ -13,7 +13,7 @@ def get_tid_by_url(url):
 	#使用.content获取二进制内容再编码，避免使用.text出现中文编码错误
 	content = requests.get(url,headers=headers).content.decode('utf-8')
 	#裁剪网页，返回结果
-	#输出格式：tuple(分区id,分区名)
+	#返回结果：tuple(分区id,分区名)
 	return (str_clip(content,r'"tid":',r','),str_clip(content,r'"tname":"',r'",'))
 
 def aid_decode(url):
