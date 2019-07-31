@@ -84,8 +84,8 @@ def start():
     for tid in config['tid']:
         print('当前处理分区： ' + str(tid))
         #实例化
-        spider = spider(tid,config)
-        spider.auto_run()
+        s = spider(tid,config)
+        s.auto_run()
 
     from .tools import check_update
     check_update()
