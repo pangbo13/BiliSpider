@@ -7,10 +7,17 @@ import queue
 import logging
 
 class spider():
-	
+	'''
+	爬虫类
+	'''
 	#构造函数
 	def __init__(self,rid,config={}):
-		
+		'''
+		爬虫类构造函数，接受参数：
+		\t tid:分区id
+		\t config:设置参数(dict类型)
+		'''
+
 		#创建必要文件夹
 		if not os.path.exists(r'./log'):
 			os.makedirs(r'./log')
@@ -99,6 +106,9 @@ class spider():
 			}
 	#获取总页数函数
 	def get_all_pages(self):
+		'''
+		获取总页数函数
+		'''
 		self.logger.debug("开始获取总页数")
 		#print('正在获取总页数:',end='')
 		try:
@@ -107,6 +117,7 @@ class spider():
 			self.logger.info("分区下总页数：{}".format(all_pages))
 			#print(all_pages)
 			self.global_var['all_pages'] = all_pages
+			return all_pages
 		except:
 			self.logger.error("获取总页数失败",exc_info = True)
 			self.logger.error("服务器返回内容：\n" + res.content.decode('utf-8'))
@@ -123,15 +134,24 @@ class spider():
 			t.start()
 	#等待函数
 	def wait(self):
+		'''
+		等待函数，阻塞当前进程至所有爬虫线程结束
+		'''
 		# 等待所有线程完成
 		threads = self.global_var['threads']
 		for t in threads:
 			t.join()
 
 	def close(self):
+		'''
+		进行后续操作
+		'''
 		self.global_var['file'].close()
 	
 	def auto_run(self):
+		'''
+		自动开始执行
+		'''
 		self.prepare()
 		self.start()
 		self.wait()
@@ -139,7 +159,14 @@ class spider():
 	
 
 	class SpiderThread (threading.Thread):
+		'''
+		爬虫线程类
+		'''
 		def __init__(self, threadID, name, father):
+			'''
+			爬虫线程类初始化函数
+			参数为线程id(int),线程名(str),父类对象(class spider)
+			'''
 			threading.Thread.__init__(self)
 			self.threadID = threadID
 			self.name = name
@@ -194,15 +221,6 @@ class spider():
 				#解析数据
 				for vinfo in res.json()['data']['archives']:
 					out += ','.join(map(str,[vinfo['stat'][item] for item in items ])) + '\n'
-					# out += 	repr(vinfo['stat']['aid']) + ','
-					# out +=  repr(vinfo['stat']['view']) +  ','
-					# out +=  repr(vinfo['stat']['danmaku']) +  ','
-					# out +=  repr(vinfo['stat']['reply']) +  ','
-					# out +=  repr(vinfo['stat']['favorite']) +  ','
-					# out +=  repr(vinfo['stat']['coin']) +  ','
-					# out +=  repr(vinfo['stat']['share']) +  ','
-					# out +=  repr(vinfo['stat']['like']) +  ','
-					# out +=  repr(vinfo['stat']['dislike']) +  '\n'
 				#写入数据
 				queue.put(out,block=False)
 				e_time = time.time()*1000
@@ -237,6 +255,7 @@ class spider():
 				while not queue.empty():
 					f.write(queue.get(block=False))
 			monitor_output(1,BAR_LENGTH)
+			print('\n')
 
 		def logformat(self,msg):
 			return self.name + ' - ' + msg

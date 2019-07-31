@@ -2,60 +2,12 @@
 import argparse
 
 def start():
-    #av号解析函数
-    def aid_decode(url):
-        #定义错误类
-        class URL_ERROR(Exception):
-            def __init__(self):
-                super().__init__()
-                self.args = ('无法识别av号',)
-                self.code = '101'
+    '''
+    命令行进入点，用于解析命令行参数
+    '''
     
-        url = url.lower()
-        if url.isdigit():
-            #如果是纯数字
-            url = r'https://www.bilibili.com/video/av' + url
-        elif url[:2] == 'av':
-            #如果是以av开头的av号
-            if not url[2:].isdigit():
-                raise URL_ERROR()
-            url = r'https://www.bilibili.com/video/' + url
-        elif 'av' in url :
-            #检测地址中是否含av关键字
-            #拆分地址，选取含有av的部分
-            url = filter(lambda x : 'av' in x ,url.split(r'/'))
-            #如果获取多个结果，只选择第一个，避免后面的额外信息包括关键词
-            url = tuple(url)[0]
-            #检测获取的片段是否是av+数字的形式，否则抛出错误
-            if url[:2] != 'av' :
-                raise URL_ERROR()
-            if url[2:].isdigit():
-                raise URL_ERROR()
-            #格式化为完整视频地址
-            url = r'https://www.bilibili.com/video/' + url
-        else:
-            raise URL_ERROR()
-        return url
-
-    def get_tid_by_url(url):
-        #定义查找函数
-        def str_clip(content,start_str,end_str):
-            start = content.find(start_str) + len(start_str)
-            end = content.find(end_str,start)
-            if start == -1 or end == -1:
-                return None
-            return content[start:end]
-        import requests
-        #导入请求头
-        from .headers import Page_headers as headers
-        #获取网页内容
-        #使用.content获取二进制内容再编码，避免使用.text出现中文编码错误
-        content = requests.get(url,headers=headers).content.decode('utf-8')
-        #裁剪网页，返回结果
-        #输出格式：tuple(分区id,分区名)
-        return (str_clip(content,r'"tid":',r','),str_clip(content,r'"tname":"',r'",'))
-
-
+    #导入av号解析tid的函数
+    from .tools import aid_decode,get_tid_by_url
 
     #开始解析参数
     parser = argparse.ArgumentParser(add_help=False)
@@ -76,7 +28,7 @@ def start():
 
     if args.help:
         parser.print_help()
-        exit()
+        return 1
 
     if args.safemode:
         print("进入安全模式后，仅使用单线程和必要模块，除tid外的参数将被忽略，可以减少资源消耗和被封禁IP的风险，但效率会变低")
@@ -85,7 +37,7 @@ def start():
         else :
             print('你已进入安全模式')
             #TODO
-        exit()
+        return 2
 
     if args.loadconfig:
         import json
@@ -95,14 +47,13 @@ def start():
 
     if args.gui:
         from .gui import gui_config
-        config = gui_config(config).get()
+        config.update(gui_config(config).get())
     else :
         del config['gui']
 
     if not config['tid'] and not args.url:
         parser.print_help()
         exit()
-
 
     if args.saveconfig:
         import json
@@ -115,11 +66,11 @@ def start():
     if args.debug :
         config['output'] = 2
 
-    if args.tid:
+    if config.get('tid',False):
         #将获取的字符串以逗号拆分
         #再通过map函数迭代转化为int
         #转化为set以去除重复项
-        config['tid'] = tuple(set(map(int,args.tid.split(','))))
+        config['tid'] = tuple(set(map(int,config['tid'].split(','))))
 
     if args.url and not config['tid'] : 
         tid_info = get_tid_by_url(aid_decode(args.url))
@@ -131,8 +82,10 @@ def start():
     print(config)
     from .bilispider import spider
     for tid in config['tid']:
+        print('挡墙处理分区： ' + str(tid))
         #实例化
         spider = spider(tid,config)
         spider.auto_run()
-        from .tools import check_update
-        check_update()
+
+    from .tools import check_update
+    check_update()
