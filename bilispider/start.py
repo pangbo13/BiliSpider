@@ -76,7 +76,7 @@ def start():
 
     if args.help:
         parser.print_help()
-        exit()
+        return 1
 
     if args.safemode:
         print("进入安全模式后，仅使用单线程和必要模块，除tid外的参数将被忽略，可以减少资源消耗和被封禁IP的风险，但效率会变低")
@@ -85,7 +85,7 @@ def start():
         else :
             print('你已进入安全模式')
             #TODO
-        exit()
+        return 2
 
     if args.loadconfig:
         import json
@@ -95,14 +95,13 @@ def start():
 
     if args.gui:
         from .gui import gui_config
-        config = gui_config(config).get()
+        config.update(gui_config(config).get())
     else :
         del config['gui']
 
     if not config['tid'] and not args.url:
         parser.print_help()
         exit()
-
 
     if args.saveconfig:
         import json
@@ -115,11 +114,11 @@ def start():
     if args.debug :
         config['output'] = 2
 
-    if args.tid:
+    if config.get('tid',False):
         #将获取的字符串以逗号拆分
         #再通过map函数迭代转化为int
         #转化为set以去除重复项
-        config['tid'] = tuple(set(map(int,args.tid.split(','))))
+        config['tid'] = tuple(set(map(int,config['tid'].split(','))))
 
     if args.url and not config['tid'] : 
         tid_info = get_tid_by_url(aid_decode(args.url))
@@ -131,8 +130,10 @@ def start():
     print(config)
     from .bilispider import spider
     for tid in config['tid']:
+        print('挡墙处理分区： ' + str(tid))
         #实例化
         spider = spider(tid,config)
         spider.auto_run()
-        from .tools import check_update
-        check_update()
+
+    from .tools import check_update
+    check_update()
