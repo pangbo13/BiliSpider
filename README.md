@@ -18,5 +18,7 @@ A spider of BiliBili.
 > 在终端中使用python3 -m bilispider 启动
 ## 以模块导入
 > import bilispider
+>
 > 使用help(bilispider.bilispider)以查看用法
+>
 > 实例化类：s = bilispider.spider(tid,config={})
