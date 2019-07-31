@@ -194,15 +194,6 @@ class spider():
 				#解析数据
 				for vinfo in res.json()['data']['archives']:
 					out += ','.join(map(str,[vinfo['stat'][item] for item in items ])) + '\n'
-					# out += 	repr(vinfo['stat']['aid']) + ','
-					# out +=  repr(vinfo['stat']['view']) +  ','
-					# out +=  repr(vinfo['stat']['danmaku']) +  ','
-					# out +=  repr(vinfo['stat']['reply']) +  ','
-					# out +=  repr(vinfo['stat']['favorite']) +  ','
-					# out +=  repr(vinfo['stat']['coin']) +  ','
-					# out +=  repr(vinfo['stat']['share']) +  ','
-					# out +=  repr(vinfo['stat']['like']) +  ','
-					# out +=  repr(vinfo['stat']['dislike']) +  '\n'
 				#写入数据
 				queue.put(out,block=False)
 				e_time = time.time()*1000
@@ -237,6 +228,7 @@ class spider():
 				while not queue.empty():
 					f.write(queue.get(block=False))
 			monitor_output(1,BAR_LENGTH)
+			print('\n')
 
 		def logformat(self,msg):
 			return self.name + ' - ' + msg
