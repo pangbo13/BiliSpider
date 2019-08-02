@@ -17,6 +17,8 @@ class spider():
 		\t tid:分区id
 		\t config:设置参数(dict类型)
 		'''
+		#更新状态
+		self.status = {'process' : '__init__'}
 
 		#创建必要文件夹
 		if not os.path.exists(r'./log'):
@@ -78,12 +80,14 @@ class spider():
 	
 	#初始化函数
 	def prepare(self):
+		#更新状态
+		self.status = {'process' : 'prepare'}
+		
 		threadLock = threading.Lock()
 		q = queue.Queue()
 		threads = []
 		errorlist = []
 		now_pages = 0
-		state_dict = {}
 		#生成文件名
 		FILENAME = r'./data/'+'-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
 		#打开文件			
@@ -99,7 +103,6 @@ class spider():
 			'threads' : threads,
 			'errorlist' : errorlist,
 			'now_pages' : now_pages,
-			'state_dict' : state_dict,
 			'file' : file,
 			'url' : self.url,
 			'headers' : headers,
@@ -121,14 +124,19 @@ class spider():
 		except:
 			self.logger.error("获取总页数失败",exc_info = True)
 			self.logger.error("服务器返回内容：\n" + res.content.decode('utf-8'))
-			exit()
+			return -1
 	def start(self):
+		#更新状态
+		self.status = {'process' : 'start'}
+		self.status['spider_thread_num'] = self.thread_num
 		# 创建新线程
 		threads = self.global_var['threads']
 		threads.append(self.MonitorThread(0, 'Monitor', self))
 		for i in range(1,self.thread_num+1):
 			threads.append(self.SpiderThread(i, "SThread-{}".format(i), self))
-		self.get_all_pages()
+		#获取总页数
+		all_pages = self.get_all_pages()
+		self.status['all_pages'] = all_pages
 		# 开启新线程
 		for t in threads:
 			t.start()
@@ -137,6 +145,8 @@ class spider():
 		'''
 		等待函数，阻塞当前进程至所有爬虫线程结束
 		'''
+		#更新状态
+		self.status = {'process' : 'wait'}
 		# 等待所有线程完成
 		threads = self.global_var['threads']
 		for t in threads:
@@ -240,20 +250,49 @@ class spider():
 		def run(self):
 			#设置进度条长度
 			BAR_LENGTH = 50
+
 			#全局变量
+			status = self.father.status
 			var = self.father.global_var
 			queue = var['queue']
 			f = var['file']
 			threads = var['threads'][1:]
+			#启动时间
+			status['start_time'] = time.time()*1000
+
+			# #启动http服务器
+			# self.http_thread = threading.Thread(target=self.start_http,daemon=True,name='http')
+			# self.http_thread.start()
+			
 			monitor_output = self.show_bar
 			time.sleep(1)
+			monitor_circles = -1
 			while bool(sum(t.isAlive() for t in threads)):
-				if self.father.SHOW_BAR :
-					percentage = (var['now_pages']-1)/var['all_pages']
-					monitor_output(percentage,BAR_LENGTH)
-				time.sleep(0.5)
-				while not queue.empty():
-					f.write(queue.get(block=False))
+				monitor_circles += 1
+				if monitor_circles % 5 == 0:
+					#显示进度条
+					if self.father.SHOW_BAR :
+						percentage = (var['now_pages']-1)/var['all_pages']
+						monitor_output(percentage,BAR_LENGTH)
+				if monitor_circles % 2 == 0:
+					#更新状态
+					status['queue_len'] = queue.qsize()
+					status['now_pages'] = var['now_pages']
+					status['now_times'] = time.time()*1000
+					status['pages_get_by_threads'] = [t.pagesget for t in threads]
+					status['monitor_circles'] = monitor_circles
+				if monitor_circles % 20 == 0:
+					#发送当前状态
+					try:
+						threading.Thread(target=self.http_post_state,name='http_post',daemon=True).start()
+					except:
+						pass
+				if monitor_circles % 50 == 0:
+					#写入文件
+					while not queue.empty():
+						f.write(queue.get(block=False))
+				time.sleep(0.1)
+
 			monitor_output(1,BAR_LENGTH)
 			print('\n')
 
@@ -263,3 +302,6 @@ class spider():
 		def show_bar(self,percentage,BAR_LENGTH):
 			count = int(percentage*BAR_LENGTH)
 			print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (BAR_LENGTH - count),round(percentage*100,2)),end = '')
+
+		def http_post_state(self):
+			requests.post('http://localhost:1214/post',json=self.father.status)

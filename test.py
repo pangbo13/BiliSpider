@@ -1,2 +1,3 @@
-from bilispider.tools import check_update
-check_update()
+from bilispider import *
+s = spider(30,{'tid':(30,),'debug':True})
+s.auto_run()
