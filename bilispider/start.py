@@ -13,6 +13,7 @@ def start():
     parser = argparse.ArgumentParser(add_help=False)
     parser.description='输入参数或指定配置文件以配置BiliSpider'
     parser.add_argument("-h","--help",help="打印此信息并退出",action='store_true')
+    parser.add_argument("-v","--version",help="显示版本",action='store_true')
     parser.add_argument("-t","--tid", help="通过分组id进行爬取 可使用逗号连接多个tid，如：1,2,3",type=str)
     parser.add_argument("-u","--url", help="通过视频网址或av号自动识别分区并爬取 注意：仅在无(--tid,-t)时生效",type=str)
     parser.add_argument("-lc","--loadconfig",metavar="FILE_PATH",help="指定配置文件 注意：单独指定的参数将覆盖配置文件参数",type=str)
@@ -29,6 +30,11 @@ def start():
     if args.help:
         parser.print_help()
         return 1
+
+    if args.version:
+        from .version import version
+        print(version)
+        return 2
 
     if args.safemode:
         print("进入安全模式后，仅使用单线程和必要模块，除tid外的参数将被忽略，可以减少资源消耗和被封禁IP的风险，但效率会变低")

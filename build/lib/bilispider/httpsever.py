@@ -21,10 +21,11 @@ class HTTPServer(object):
         self.server_socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.spider_status = {}
+        self.exit_mes = False
 
     def start(self):
         self.server_socket.listen(128)
-        while True:
+        while not self.exit_mes:
             client_socket, client_address = self.server_socket.accept()
             print("[%s, %s]用户连接上了" % client_address)
             handle_client_process = Thread(
@@ -68,6 +69,12 @@ class HTTPServer(object):
 
             response_start_line = "HTTP/1.1 200 OK\r\n"
             response_headers = "Server: BiliSpider server\r\n"
+        elif len(file_name) >= 5 and file_name[:5] == '/exit':
+            response_body = 'received exit command!'
+            self.exit_mes = True
+            from time import sleep
+            response_start_line = "HTTP/1.1 200 OK\r\n"
+            response_headers = "Server: BiliSpider server\r\n"
         else:
             # 打开文件，读取内容
             try:
@@ -83,6 +90,13 @@ class HTTPServer(object):
                 response_start_line = "HTTP/1.1 200 OK\r\n"
                 response_headers = "Server: BiliSpider server\r\n"
                 response_body = file_data
+
+        if isinstance(response_body,bytes):
+            pass
+        elif isinstance(response_body,str):
+            response_body = response_body.encode('utf_8')
+        else:
+            response_body = str(response_body).encode('utf_8')
 
         response = bytes(response_start_line + response_headers + "\r\n" , 'utf-8')+ response_body
         #print("response data:\n", response)

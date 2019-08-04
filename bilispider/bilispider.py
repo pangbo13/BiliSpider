@@ -252,7 +252,7 @@ class spider():
 			BAR_LENGTH = 50
 
 			#全局变量
-			status = self.father.status
+			status = {}
 			var = self.father.global_var
 			queue = var['queue']
 			f = var['file']
@@ -267,7 +267,7 @@ class spider():
 			monitor_output = self.show_bar
 			time.sleep(1)
 			monitor_circles = -1
-			while bool(sum(t.isAlive() for t in threads)):
+			while any(t.isAlive() for t in threads):
 				monitor_circles += 1
 				if monitor_circles % 5 == 0:
 					#显示进度条
@@ -281,6 +281,7 @@ class spider():
 					status['now_times'] = time.time()*1000
 					status['pages_get_by_threads'] = [t.pagesget for t in threads]
 					status['monitor_circles'] = monitor_circles
+					self.father.status.update(status)
 				if monitor_circles % 20 == 0:
 					#发送当前状态
 					try:

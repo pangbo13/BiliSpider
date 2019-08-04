@@ -267,7 +267,7 @@ class spider():
 			monitor_output = self.show_bar
 			time.sleep(1)
 			monitor_circles = -1
-			while bool(sum(t.isAlive() for t in threads)):
+			while any(t.isAlive() for t in threads):
 				monitor_circles += 1
 				if monitor_circles % 5 == 0:
 					#显示进度条
