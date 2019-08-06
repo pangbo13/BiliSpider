@@ -58,7 +58,7 @@ def check_update():
 	res = get(r'https://raw.githubusercontent.com/pangbo13/BiliSpider/master/version.txt')
 	latest_version = res.text
 	now_version = version
-	if latest_version != now_version:
+	if latest_version > now_version:
 		print('发现更新：' + latest_version)
 		system(r'pip install https://github.com/pangbo13/BiliSpider/blob/master/dist/bilispider-{}-py3-none-any.whl?raw=true'.format(latest_version))
 	else:

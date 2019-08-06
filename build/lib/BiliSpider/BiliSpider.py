@@ -252,7 +252,7 @@ class spider():
 			BAR_LENGTH = 50
 
 			#全局变量
-			status = self.father.status
+			status = {}
 			var = self.father.global_var
 			queue = var['queue']
 			f = var['file']
@@ -281,12 +281,10 @@ class spider():
 					status['now_times'] = time.time()*1000
 					status['pages_get_by_threads'] = [t.pagesget for t in threads]
 					status['monitor_circles'] = monitor_circles
+					self.father.status.update(status)
 				if monitor_circles % 20 == 0:
 					#发送当前状态
-					try:
-						threading.Thread(target=self.http_post_state,name='http_post',daemon=True).start()
-					except:
-						pass
+					threading.Thread(target=self.http_post_state,name='http_post',daemon=True).start()
 				if monitor_circles % 50 == 0:
 					#写入文件
 					while not queue.empty():
@@ -304,4 +302,7 @@ class spider():
 			print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (BAR_LENGTH - count),round(percentage*100,2)),end = '')
 
 		def http_post_state(self):
-			requests.post('http://localhost:1214/post',json=self.father.status)
+			try:
+				requests.post('http://localhost:1214/post',json=self.father.status)
+			except:
+				pass

@@ -62,7 +62,7 @@ class HTTPServer(object):
                                         'spider': self.spider_status,
                                         })
         elif len(file_name) >= 5 and file_name[:5] == '/post':
-
+            print(request_lines[-1].decode('utf-8'))
             self.set_status(json.loads(request_lines[-1].decode('utf-8')))
             print(self.spider_status)
             response_body = 'received!'
