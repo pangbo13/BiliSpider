@@ -260,9 +260,8 @@ class spider():
 			#启动时间
 			status['start_time'] = time.time()*1000
 
-			# #启动http服务器
-			# self.http_thread = threading.Thread(target=self.start_http,daemon=True,name='http')
-			# self.http_thread.start()
+			#启动http服务器
+			self.start_httpserver()
 			
 			monitor_output = self.show_bar
 			time.sleep(1)
@@ -300,6 +299,12 @@ class spider():
 		def show_bar(self,percentage,BAR_LENGTH):
 			count = int(percentage*BAR_LENGTH)
 			print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (BAR_LENGTH - count),round(percentage*100,2)),end = '')
+
+		def start_httpserver(self):
+			port = getattr(self,'HTTPPORT',1214)
+			from .httpserver import start_server
+			self.http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(port,))
+			self.http_thread.start()
 
 		def http_post_state(self):
 			try:
