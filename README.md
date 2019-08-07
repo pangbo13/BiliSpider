@@ -22,7 +22,7 @@ A spider of BiliBili.
 	+ tid:分区的编号，查询方法见GUI和高级用法
 	+ config：字典类型变量(可选)，用于指定设置参数，用法见[高级用法](#高级用法 "转到高级用法")
 + 开始爬取：`s.auto_run()`
-	+ 若希望控制爬虫运行过程请见高级用法
+	+ 若希望控制运行过程请见[高级用法](#高级用法 "转到高级用法")
 ## GUI控制模式(测试版本)
 + 在控制台使用`bilispider --gui`或`python -m bilispider --gui`(Linux下为`python3 -m bilispider --gui` )
 	> 详见[GUI指南](#GUI指南 "GUI指南")
