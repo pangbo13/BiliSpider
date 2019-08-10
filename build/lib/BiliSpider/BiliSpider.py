@@ -249,7 +249,7 @@ class spider():
 			self.logger.debug(self.logformat('线程已创建！'))
 		def run(self):
 			#设置进度条长度
-			BAR_LENGTH = 50
+			self.BAR_LENGTH = 50
 
 			#全局变量
 			status = {}
@@ -260,9 +260,8 @@ class spider():
 			#启动时间
 			status['start_time'] = time.time()*1000
 
-			# #启动http服务器
-			# self.http_thread = threading.Thread(target=self.start_http,daemon=True,name='http')
-			# self.http_thread.start()
+			#启动http服务器
+			self.start_httpserver()
 			
 			monitor_output = self.show_bar
 			time.sleep(1)
@@ -273,7 +272,7 @@ class spider():
 					#显示进度条
 					if self.father.SHOW_BAR :
 						percentage = (var['now_pages']-1)/var['all_pages']
-						monitor_output(percentage,BAR_LENGTH)
+						monitor_output(percentage,monitor_circles)
 				if monitor_circles % 2 == 0:
 					#更新状态
 					status['queue_len'] = queue.qsize()
@@ -291,15 +290,25 @@ class spider():
 						f.write(queue.get(block=False))
 				time.sleep(0.1)
 
-			monitor_output(1,BAR_LENGTH)
+			monitor_output(1,monitor_circles)
 			print('\n')
 
 		def logformat(self,msg):
 			return self.name + ' - ' + msg
 
-		def show_bar(self,percentage,BAR_LENGTH):
+		def show_bar(self,percentage,BAR_LENGTH,*args):
+			BAR_LENGTH = self.BAR_LENGTH
 			count = int(percentage*BAR_LENGTH)
 			print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (BAR_LENGTH - count),round(percentage*100,2)),end = '')
+
+		def show_status(self,percentage,*args):
+			pass
+
+		def start_httpserver(self):
+			port = getattr(self,'HTTPPORT',1214)
+			from .httpserver import start_server
+			self.http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(port,))
+			self.http_thread.start()
 
 		def http_post_state(self):
 			try:

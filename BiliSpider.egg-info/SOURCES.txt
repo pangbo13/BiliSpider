@@ -5,7 +5,7 @@ bilispider/__main__.py
 bilispider/bilispider.py
 bilispider/gui.py
 bilispider/headers.py
-bilispider/httpsever.py
+bilispider/httpserver.py
 bilispider/start.py
 bilispider/tools.py
 bilispider/version.py

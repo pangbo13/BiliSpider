@@ -136,11 +136,11 @@ class HTTPServer(object):
         self.spider_status.update(status)
 
 
-def start_serve(port=1214):
+def start_server(port=1214):
     http_server = HTTPServer()
     http_server.bind(port)
     http_server.start()
 
 
 if __name__ == "__main__":
-    start_serve()
+    start_server()
