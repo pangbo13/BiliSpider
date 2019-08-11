@@ -39,12 +39,9 @@ def start():
 
     if args.safemode:
         print("进入安全模式后，仅使用单线程和必要模块，除tid外的参数将被忽略，可以减少资源消耗和被封禁IP的风险，但效率会变低")
-        if input("输入Y以进入安全模式:").lower() != 'y':
-            pass
-        else :
-            print('你已进入安全模式')
-            #TODO
-        return 2
+        from .safemode import safemode
+        safemode(args.tid)
+        return 3
 
     if args.loadconfig:
         import json
