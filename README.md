@@ -46,7 +46,7 @@ A spider of BiliBili.
 + `--thread_num`,`-tn`：指定线程数，默认为2 
 	+  ***注意：线程数过多可能导致IP封禁***
 + `--gui`,`-g`：打开可视化界面 *(测试)*
-+ `--safemode`：安全模式 *(测试)*
++ `--safemode`：安全模式
 ## 参数实例
 > bilispider --tid 30 \
  bilispider -t 30 
