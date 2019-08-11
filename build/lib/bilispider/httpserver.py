@@ -27,12 +27,12 @@ class HTTPServer(object):
         self.server_socket.listen(128)
         while not self.exit_mes:
             client_socket, client_address = self.server_socket.accept()
-            print("[%s, %s]用户连接上了" % client_address)
+            #print("[%s, %s]用户连接上了" % client_address)
             handle_client_process = Thread(
                 target=self.handle_client, args=(client_socket,))
             handle_client_process.start()
             #client_socket.close()
-            print(self.spider_status)
+            #print(self.spider_status)
 
     def handle_client(self, client_socket,):
         """
@@ -62,9 +62,9 @@ class HTTPServer(object):
                                         'spider': self.spider_status,
                                         })
         elif len(file_name) >= 5 and file_name[:5] == '/post':
-            print(request_lines[-1].decode('utf-8'))
+            #print(request_lines[-1].decode('utf-8'))
             self.set_status(json.loads(request_lines[-1].decode('utf-8')))
-            print(self.spider_status)
+            #print(self.spider_status)
             response_body = 'received!'
 
             response_start_line = "HTTP/1.1 200 OK\r\n"

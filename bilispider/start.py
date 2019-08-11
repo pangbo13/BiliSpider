@@ -22,6 +22,7 @@ def start():
     parser.add_argument("--debug",help="启用调试",action='store_true')
     parser.add_argument("--saveconfig","-sc",metavar="FILE_PATH",help="根据参数保存配置文件并退出",type=str)
     parser.add_argument("--thread_num","-tn",help="指定线程数，默认为2",default=2,type=int)
+    parser.add_argument("--http", help="设置http状态数据发送端口，0为关闭，默认为1214，若检测到服务器未开启将启动内置服务器",type=int,default=1214)
     parser.add_argument("--gui","-g",help="打开可视化界面",action='store_true')
     parser.add_argument("--safemode",help="安全模式",action='store_true')
     args = parser.parse_args()

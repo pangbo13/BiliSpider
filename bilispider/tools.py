@@ -74,14 +74,13 @@ def check_update():
 def tid_scan(ending=200, start=0):
     from requests import get
     out = []
+    from .headers import Api_headers
     for tid in range(start, ending):
         res = get(
-            'https://api.bilibili.com/x/web-interface/newlist?rid={}&ps=1'.format(tid)).json()
+            'https://api.bilibili.com/x/web-interface/newlist?rid={}&ps=1'.format(tid),headers=Api_headers).json()
         if res['data']['page']['count'] == 0:
             continue
         out.append((res['data']['archives'][0]['tid'],
                     res['data']['archives'][0]['tname'],
                     res['data']['page']['count'],))
-    return(out)
-
-print(tid_scan())
+    return out
