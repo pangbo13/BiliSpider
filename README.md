@@ -61,9 +61,12 @@ bilispider -lc config.json
 
 
 # GUI指南
-![GUI窗口](img/gui_1.png "GUI主窗口")
+## 基本设置
+![GUI窗口](img/gui_2.png "GUI主窗口")
 + 在 从url识别中 输入av号或视频地址，点击确认获取分区信息
 + 点击确认以提交参数
+## 高级设置
+![GUI窗口高级选项](img/gui_3.png "GUI主窗口高级选项")
 
 # HTTP服务器
 + 运行内置httpsever模块或使用[BiliSpider_HTTPserver](https://github.com/pangbo13/BiliSpider_HTTPserver "在github中打开BiliSpider_HTTPserver")启动服务器

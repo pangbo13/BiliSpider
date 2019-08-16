@@ -8,6 +8,7 @@ class gui_config():
 			config['output'] = int(output_choice.get())
 			config['logmode'] = int(logmode_choice.get())
 			config['thread_num'] = int(thread_num.get())
+			config['http'] = int(http_port.get())
 			root.quit()
 	
 		def get_tid():
@@ -54,25 +55,31 @@ class gui_config():
 
 		#高级选项
 		ad_frame = tk.Frame(root)
-		logmode_choice = tk.IntVar(root,value=config.get('logmode',2)-1)
-		output_choice = tk.IntVar(root,value=config.get('output',2)-1)
+		logmode_choice = tk.IntVar(root,value=config.get('logmode',1))
+		output_choice = tk.IntVar(root,value=config.get('output',1))
 		thread_num = tk.IntVar(root,value=config.get('thread_num',2))
-
+		http_port = tk.IntVar(root,value=config.get('http',1214))
+		#添加分割线
 		ttk.Separator(ad_frame,orient=tk.HORIZONTAL).grid(row=0,column=0,columnspan=4,sticky="we",pady=8,padx=0)
+		#添加标签控件
 		ttk.Label(ad_frame,text='日志模式').grid(row=1,column=0,padx=(0,10))
 		ttk.Label(ad_frame,text='输出模式').grid(row=2,column=0,padx=(0,10))
-
+		ttk.Label(ad_frame,text='线程数').grid(row=3,column=0)
+		ttk.Label(ad_frame,text='http服务器端口').grid(row=4,column=0,padx=(0,10))
+		#日志模式单选按钮
 		logmode_description = ('无输出','进度条模式','输出日志')
 		for i in range(3):
 			ttk.Radiobutton(ad_frame,text=logmode_description[i],variable=logmode_choice,value=i).grid(row=1,column=i+1,stick=tk.W)
-
+		#输出模式单选按钮
 		output_description = ('不保存','仅保存错误','保存所有输出')
 		for i in range(3):
 			ttk.Radiobutton(ad_frame,text=output_description[i],variable=output_choice,value=i).grid(row=2,column=i+1,stick=tk.W)
-		ttk.Label(ad_frame,text='线程数').grid(row=3,column=0)
+		#添加线程数滑动条
 		ttk.Scale(ad_frame, from_=1, to=10,length=150,variable=thread_num,command=show_thread_num).grid(row=3,column=1,columnspan=2)
 		thread_num_label = tk.Label(ad_frame,text='2')
 		thread_num_label.grid(row=3,column=3)
+		#添加端口输入框
+		ttk.Entry(ad_frame,textvariable=http_port,width=15).grid(row=4,column=1,columnspan=2,sticky='w')
 		#高级选项结束
 
 
