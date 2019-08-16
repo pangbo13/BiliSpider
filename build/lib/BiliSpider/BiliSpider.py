@@ -31,18 +31,17 @@ class spider():
 		self.url = 'https://api.bilibili.com/x/web-interface/newlist?rid={}&pn={}'.format(rid,'{}')
 		self.rid = rid
 		if rid not in config['tid']:
-			self.logger.warning('分区id不一致，请检查设置')
+			self._logger.warning('分区id不一致，请检查设置')
 		self.thread_num = config.get('thread_num',2)
 		self.http_port = config.get('http',1214)
 
-		self.logger.debug("构造完成")
+		self._logger.debug("构造完成")
 
 	def set_logger(self,config):
 
 		#配置日志记录
 		FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s '
 		FILENAME = r'./log/'+'-'.join(map(str,tuple(time.localtime())[:5])) + '.log'
-		#logging.basicConfig(level = logging.DEBUG,format = FORMAT ,datefmt='%H:%M:%S')
 		logger = logging.getLogger(__name__)
 		if config.get('debug',False):
 			logger.setLevel(level = logging.DEBUG)
@@ -77,7 +76,7 @@ class spider():
 		#日志配置完成
 		logger.info("日志配置完毕")
 
-		self.logger = logger
+		self._logger = logger
 	
 	#初始化函数
 	def prepare(self):
@@ -97,7 +96,7 @@ class spider():
 		#导入请求头
 		from .headers import Api_headers as headers
 		#封装全局变量
-		self.global_var ={
+		self._global_var ={
 			'threadLock' : threadLock,
 			'queue' : q,
 			'spider_threads' : [],
@@ -113,26 +112,25 @@ class spider():
 		'''
 		获取总页数函数
 		'''
-		self.logger.debug("开始获取总页数")
+		self._logger.debug("开始获取总页数")
 		#print('正在获取总页数:',end='')
 		try:
 			res = requests.get(self.url.format(r'1&ps=1'))
 			all_pages = int(res.json()['data']['page']['count']/50) + 1
-			self.logger.info("分区下总页数：{}".format(all_pages))
-			#print(all_pages)
-			self.global_var['all_pages'] = all_pages
+			self._logger.info("分区下总页数：{}".format(all_pages))
+			self._global_var['all_pages'] = all_pages
 			return all_pages
 		except:
-			self.logger.error("获取总页数失败",exc_info = True)
-			self.logger.error("服务器返回内容：\n" + res.content.decode('utf-8'))
+			self._logger.error("获取总页数失败",exc_info = True)
+			self._logger.error("服务器返回内容：\n" + res.content.decode('utf-8'))
 			return -1
 	def start(self):
 		#更新状态
 		self.status = {'process' : 'start'}
 		self.status['spider_thread_num'] = self.thread_num
 		# 创建新线程
-		spider_threads = self.global_var['spider_threads']
-		func_threads = self.global_var['func_threads']
+		spider_threads = self._global_var['spider_threads']
+		func_threads = self._global_var['func_threads']
 
 		for i in range(1,self.thread_num+1):
 			spider_threads.append(self.SpiderThread(i, "SThread-{}".format(i), self))
@@ -164,13 +162,13 @@ class spider():
 		# threads = self.global_var['spider_threads']
 		# for t in threads:
 		# 	t.join()
-		self.global_var['func_threads'][0].join()
+		self._global_var['func_threads'][0].join()
 
 	def close(self):
 		'''
 		进行后续操作
 		'''
-		self.global_var['file'].close()
+		self._global_var['file'].close()
 	
 	def auto_run(self):
 		'''
