@@ -28,8 +28,11 @@ class gui_config():
 			else:
 				ad_frame.forget()
 
-		def show_thread_num(var):
+		def show_thread_num(pos):
 			thread_num_label.config(text=str(thread_num.get()))
+
+		def set_port(pos):
+			http_port.set(int(http_port.get()))
 
 		root = tk.Tk()
 		self.root = root
@@ -79,7 +82,8 @@ class gui_config():
 		thread_num_label = tk.Label(ad_frame,text='2')
 		thread_num_label.grid(row=3,column=3)
 		#添加端口输入框
-		ttk.Entry(ad_frame,textvariable=http_port,width=15).grid(row=4,column=1,columnspan=2,sticky='w')
+		ttk.Scale(ad_frame, from_=0, to=2000,length=150,variable=http_port,command=set_port).grid(row=4,column=1,columnspan=2)
+		ttk.Entry(ad_frame,textvariable=http_port,width=6).grid(row=4,column=3)
 		#高级选项结束
 
 
