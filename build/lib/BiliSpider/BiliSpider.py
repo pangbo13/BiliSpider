@@ -194,20 +194,20 @@ class spider():
 			self.name = name
 			self.pagesget = 0
 			self.father = father
-			self.logger = father.logger
+			self._logger = father._logger
 
-			self.logger.info(self.logformat("线程已创建！"))
+			self._logger.info(self.logformat("线程已创建！"))
 		def logformat(self,msg):
 			return self.name + ' - ' + msg
 
 		def run(self): 
 			#转存全局参数
-			var = self.father.global_var
+			var = self.father._global_var
 			all_pages = var['all_pages']
 			url = var['url']
 			queue = var['queue']
 			threadLock = var['threadLock']
-			logger = self.logger
+			logger = self._logger
 			logformat = self.logformat
 			logger.debug(logformat('线程已开始运行！'))
 			time.sleep(0.5)
@@ -258,15 +258,15 @@ class spider():
 			self.name = name
 			self.father = father
 			self.http_port = father.http_port
-			self.logger = father.logger
-			self.logger.debug(self.logformat('线程已创建！'))
+			self._logger = father._logger
+			self._logger.debug(self.logformat('线程已创建！'))
 		def run(self):
 			#设置进度条长度
 			self.BAR_LENGTH = 50
 
 			#全局变量
 			status = {}
-			var = self.father.global_var
+			var = self.father._global_var
 			queue = var['queue']
 			f = var['file']
 			spider_threads = var['spider_threads']

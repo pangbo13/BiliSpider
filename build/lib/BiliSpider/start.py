@@ -83,7 +83,7 @@ def start():
     del config['url']
 
 
-    print(config)
+    #print(config)
     from .bilispider import spider
     for tid in config['tid']:
         print('当前处理分区： ' + str(tid))
