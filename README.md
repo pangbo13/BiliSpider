@@ -24,7 +24,7 @@ A spider of BiliBili.
 + 开始爬取：`s.auto_run()`
 	+ 若希望控制运行过程请见[高级用法](#高级用法 "转到高级用法")
 ## GUI控制模式(测试版本)
-+ 在控制台使用`bilispider --gui`或`python -m bilispider --gui`(Linux下为`python3 -m bilispider --gui` )
++ 在终端使用`bilispider --gui`或`python -m bilispider --gui`(Linux下为`python3 -m bilispider --gui` )
 	> 详见[GUI指南](#GUI指南 "GUI指南")
 
 # 设置参数
