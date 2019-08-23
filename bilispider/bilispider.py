@@ -85,8 +85,6 @@ class spider():
 		
 		threadLock = threading.Lock()
 		q = queue.Queue()
-		errorlist = []
-		now_pages = 0
 		#生成文件名
 		FILENAME = r'./data/'+'-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
 		#打开文件			
@@ -101,8 +99,7 @@ class spider():
 			'queue' : q,
 			'spider_threads' : [],
 			'func_threads' : [],
-			'errorlist' : errorlist,
-			'now_pages' : now_pages,
+			'got_pages' : 0,
 			'file' : file,
 			'url' : self.url,
 			'headers' : headers,
@@ -113,12 +110,12 @@ class spider():
 		获取总页数函数
 		'''
 		self._logger.debug("开始获取总页数")
-		#print('正在获取总页数:',end='')
 		try:
 			res = requests.get(self.url.format(r'1&ps=1'))
 			all_pages = int(res.json()['data']['page']['count']/50) + 1
 			self._logger.info("分区下总页数：{}".format(all_pages))
 			self._global_var['all_pages'] = all_pages
+			self._global_var['pages_list'] = list(range(1,all_pages+1))
 			return all_pages
 		except:
 			self._logger.error("获取总页数失败",exc_info = True)
@@ -159,9 +156,6 @@ class spider():
 		#更新状态
 		self.status = {'process' : 'wait'}
 		# 等待所有线程完成
-		# threads = self.global_var['spider_threads']
-		# for t in threads:
-		# 	t.join()
 		self._global_var['func_threads'][0].join()
 
 	def close(self):
@@ -203,23 +197,16 @@ class spider():
 		def run(self): 
 			#转存全局参数
 			var = self.father._global_var
-			all_pages = var['all_pages']
 			url = var['url']
 			queue = var['queue']
-			threadLock = var['threadLock']
+			pages_list = var['pages_list']
 			logger = self._logger
 			logformat = self.logformat
 			logger.debug(logformat('线程已开始运行！'))
 			time.sleep(0.5)
-			while True:
-				#修改全局变量
-				threadLock.acquire()
-				var['now_pages'] += 1
-				pages = var['now_pages']
-				threadLock.release()
-				#判断是否继续
-				if (pages>all_pages):
-					break
+			while len(pages_list) > 0 :
+				#获取页数
+				pages = pages_list.pop(0)
 				logger.debug("正在处理第{}页".format(pages))
 				#连接服务器
 				s_time = time.time()*1000
@@ -232,7 +219,8 @@ class spider():
 						res = requests.get(url.format(pages),timeout = 10,headers = var['headers'])
 					except:
 						logger.error(logformat('第{}页连接第二次超时'.format(pages)))
-						var['errorlist'].append(pages)
+						#var['errorlist'].append(pages)
+						pages_list.append(pages)
 						continue
 				e_time = time.time()*1000
 				request_time =int( e_time - s_time )
@@ -248,8 +236,9 @@ class spider():
 				e_time = time.time()*1000
 				write_time =int( e_time - s_time )
 				logger.debug(logformat('第{}页-{}ms,{}ms'.format(pages,request_time,write_time)))
-				time.sleep(0.2)
+				var['got_pages'] += 1
 				self.pagesget += 1
+				time.sleep(0.2)
 
 	class MonitorThread (threading.Thread):
 		def __init__(self, threadID, name, father):
@@ -281,14 +270,14 @@ class spider():
 				if monitor_circles % 5 == 0:
 					#显示进度条
 					if self.father.SHOW_BAR :
-						percentage = (var['now_pages']-1)/var['all_pages']
+						percentage = (var['got_pages']-1)/var['all_pages']
 						monitor_output(percentage,monitor_circles)
 				if monitor_circles % 2 == 0:
 					#更新状态
 					status['queue_len'] = queue.qsize()
-					status['now_pages'] = var['now_pages']
 					status['now_times'] = time.time()*1000
 					status['pages_get_by_threads'] = [t.pagesget for t in spider_threads]
+					status['got_pages'] = var['got_pages']
 					status['monitor_circles'] = monitor_circles
 					self.father.status.update(status)
 				if monitor_circles % 20 == 0:

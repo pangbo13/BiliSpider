@@ -1,3 +1,3 @@
-from bilispider import *
-s = spider(30,{'tid':(30,),'debug':True})
+from bilispider.bilispider import *
+s = spider(54,{'tid':(54,),'debug':True})
 s.auto_run()
