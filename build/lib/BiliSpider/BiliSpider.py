@@ -121,7 +121,7 @@ class spider():
 			self._logger.error("获取总页数失败",exc_info = True)
 			self._logger.error("服务器返回内容：\n" + res.content.decode('utf-8'))
 			return -1
-	def start(self):
+	def start_spider(self):
 		#更新状态
 		self.status = {'process' : 'start'}
 		self.status['spider_thread_num'] = self.thread_num
@@ -143,6 +143,7 @@ class spider():
 		#获取总页数
 		all_pages = self.get_all_pages()
 		self.status['all_pages'] = all_pages
+		self.status['got_pages'] = 0
 		# 开启新线程
 		for t in spider_threads:
 			t.start()
@@ -169,7 +170,7 @@ class spider():
 		自动开始执行
 		'''
 		self.prepare()
-		self.start()
+		self.start_spider()
 		self.wait()
 		self.close()
 	
@@ -207,7 +208,7 @@ class spider():
 			while len(pages_list) > 0 :
 				#获取页数
 				pages = pages_list.pop(0)
-				logger.debug("正在处理第{}页".format(pages))
+				logger.debug(logformat("正在处理第{}页".format(pages)))
 				#连接服务器
 				s_time = time.time()*1000
 				try:
@@ -275,9 +276,10 @@ class spider():
 				if monitor_circles % 2 == 0:
 					#更新状态
 					status['queue_len'] = queue.qsize()
-					status['now_times'] = time.time()*1000
+					status['now_time'] = time.time()*1000
 					status['pages_get_by_threads'] = [t.pagesget for t in spider_threads]
 					status['got_pages'] = var['got_pages']
+					status['percentage'] = (var['got_pages']-1)/var['all_pages']
 					status['monitor_circles'] = monitor_circles
 					self.father.status.update(status)
 				if monitor_circles % 20 == 0:
