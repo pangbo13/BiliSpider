@@ -40,7 +40,7 @@ class spider():
 	def set_logger(self,config):
 
 		#配置日志记录
-		FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s '
+		FORMAT = '[%(asctime)s][%(levelname)s] - %(message)s'
 		FILENAME = r'./log/'+'-'.join(map(str,tuple(time.localtime())[:5])) + '.log'
 		logger = logging.getLogger(__name__)
 		if config.get('debug',False):
@@ -52,7 +52,7 @@ class spider():
 
 		#配置输出日志文件
 		file_log_level = (0,logging.ERROR,logging.DEBUG)[config.get('logmode',1)]
-		if file_log_level != 0 and config.get('debug',False):
+		if file_log_level != 0 :
 			handler = logging.FileHandler(FILENAME,encoding='utf-8')
 			handler.setLevel(file_log_level)
 			handler.setFormatter(logging.Formatter(fmt = FORMAT,datefmt='%H:%M:%S'))
@@ -73,6 +73,11 @@ class spider():
 		else :
 			self.SHOW_BAR = False
 
+		if config.get('output',1) == 0:
+			self.QUITE_MODE = True
+		else :
+			self.QUITE_MODE = False
+
 		#日志配置完成
 		logger.info("日志配置完毕")
 
@@ -81,7 +86,7 @@ class spider():
 	#初始化函数
 	def prepare(self):
 		#更新状态
-		self.status = {'process' : 'prepare'}
+		self.status.update({'process' : 'prepare'})
 		
 		threadLock = threading.Lock()
 		q = queue.Queue()
@@ -123,7 +128,7 @@ class spider():
 			return -1
 	def start_spider(self):
 		#更新状态
-		self.status = {'process' : 'start'}
+		self.status.update({'process' : 'start'})
 		self.status['spider_thread_num'] = self.thread_num
 		# 创建新线程
 		spider_threads = self._global_var['spider_threads']
@@ -155,7 +160,7 @@ class spider():
 		等待函数，阻塞当前进程至所有爬虫线程结束
 		'''
 		#更新状态
-		self.status = {'process' : 'wait'}
+		self.status.update({'process' : 'wait'})
 		# 等待所有线程完成
 		self._global_var['func_threads'][0].join()
 
@@ -193,7 +198,7 @@ class spider():
 
 			self._logger.info(self.logformat("线程已创建！"))
 		def logformat(self,msg):
-			return self.name + ' - ' + msg
+			return 'ST-' + str(self.threadID) + ' - ' + msg
 
 		def run(self): 
 			#转存全局参数
@@ -204,7 +209,7 @@ class spider():
 			logger = self._logger
 			logformat = self.logformat
 			logger.debug(logformat('线程已开始运行！'))
-			time.sleep(0.5)
+			time.sleep(0.1)
 			while len(pages_list) > 0 :
 				#获取页数
 				pages = pages_list.pop(0)
@@ -239,7 +244,7 @@ class spider():
 				logger.debug(logformat('第{}页-{}ms,{}ms'.format(pages,request_time,write_time)))
 				var['got_pages'] += 1
 				self.pagesget += 1
-				time.sleep(0.2)
+				#time.sleep(0.1)
 
 	class MonitorThread (threading.Thread):
 		def __init__(self, threadID, name, father):
@@ -247,6 +252,8 @@ class spider():
 			self.threadID = threadID
 			self.name = name
 			self.father = father
+			self.SHOW_BAR = father.SHOW_BAR
+			self.QUITE_MODE = father.QUITE_MODE
 			self.http_port = father.http_port
 			self._logger = father._logger
 			self._logger.debug(self.logformat('线程已创建！'))
@@ -261,17 +268,25 @@ class spider():
 			f = var['file']
 			spider_threads = var['spider_threads']
 			#启动时间
-			status['start_time'] = time.time()*1000
+			self.father.status['start_time'] = time.time()*1000
 			
-			monitor_output = self.show_bar
-			time.sleep(1)
+			if self.SHOW_BAR:
+				monitor_output = self.show_bar
+			else:
+				monitor_output = self.show_status
+
+			#time.sleep(0.5)
+			#等待爬虫线程启动
+			while not any(t.is_alive() for t in spider_threads):
+				time.sleep(0.02)
+
 			monitor_circles = -1
-			while any(t.isAlive() for t in spider_threads):
+			while any(t.is_alive() for t in spider_threads):
 				monitor_circles += 1
 				if monitor_circles % 5 == 0:
-					#显示进度条
-					if self.father.SHOW_BAR :
-						percentage = (var['got_pages']-1)/var['all_pages']
+					#显示进度条或输出状态
+					if not self.QUITE_MODE :
+						percentage = (var['got_pages'])/var['all_pages']
 						monitor_output(percentage,monitor_circles)
 				if monitor_circles % 2 == 0:
 					#更新状态
@@ -302,16 +317,56 @@ class spider():
 		def logformat(self,msg):
 			return self.name + ' - ' + msg
 
-		def show_bar(self,percentage,BAR_LENGTH,*args):
+		def show_bar(self,percentage,*args):
 			BAR_LENGTH = self.BAR_LENGTH
 			count = int(percentage*BAR_LENGTH)
 			print('\r[{}{}] --{}%   '.format('#' * count ,' ' * (BAR_LENGTH - count),round(percentage*100,2)),end = '')
+			return
 
-		def show_status(self,percentage,*args):
-			pass
+		def show_status(self,percentage,monitor_circles,*args):
+			if monitor_circles % 30 == 0:
+				status = self.father.status
+				# print(status)
+				used_time = time.time() - status['start_time']/1000
+				if status['got_pages'] != 0:
+					left_time = (status['all_pages']/status['got_pages'] - 1) * used_time
+				else:
+					left_time = 0
+				msg = "{}/{} ({} %) - {}used, {}left ".format(
+						status['got_pages'], status['all_pages'], int(percentage*100), 
+						self.time_format(int(used_time)), self.time_format(int(left_time)))
+				self._logger.info(msg)
+				return
+			else :
+				return
 
 		def http_post_state(self):
 			try:
 				requests.post('http://localhost:{}/post'.format(self.http_port),json=self.father.status)
+				self.father.status.update({"post_state":True})
 			except:
-				pass
+				self.father.status.update({"post_state":False})
+
+		@staticmethod
+		def time_format(second):
+			second = int(second)
+			if second <= 0:
+				return 0
+			else :
+				time_lis = [0,0,0]
+				if second >= 3600 :
+					time_lis[0] = second // 3600
+					second %= 3600
+				if second >= 60 :
+					time_lis[1] = second // 60
+					second %= 60
+				time_lis[2] = second
+				for i in range(len(time_lis)):
+					if time_lis[i]:
+						top_level = i
+						break
+				out = ""
+				level_name = ("h","min","s")
+				for i in range(top_level,len(time_lis)):
+					out += "{}{} ".format(time_lis[i],level_name[i])
+				return out
