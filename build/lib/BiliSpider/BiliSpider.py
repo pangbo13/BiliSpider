@@ -20,11 +20,9 @@ class spider():
 		#更新状态
 		self.status = {'process' : '__init__'}
 
-		#创建必要文件夹
+		#创建数据文件夹
 		if not os.path.exists(r'./log'):
 			os.makedirs(r'./log')
-		if not os.path.exists(r'./data'):
-			os.makedirs(r'./data')
 
 		self.set_logger(config)
 
@@ -38,6 +36,9 @@ class spider():
 		self._logger.debug("构造完成")
 
 	def set_logger(self,config):
+		#创建日志文件夹
+		if not os.path.exists(r'./data'):
+			os.makedirs(r'./data')
 
 		#配置日志记录
 		FORMAT = '[%(asctime)s][%(levelname)s] - %(message)s'
@@ -225,7 +226,6 @@ class spider():
 						res = requests.get(url.format(pages),timeout = 10,headers = var['headers'])
 					except:
 						logger.error(logformat('第{}页连接第二次超时'.format(pages)))
-						#var['errorlist'].append(pages)
 						pages_list.append(pages)
 						continue
 				e_time = time.time()*1000
@@ -244,7 +244,6 @@ class spider():
 				logger.debug(logformat('第{}页-{}ms,{}ms'.format(pages,request_time,write_time)))
 				var['got_pages'] += 1
 				self.pagesget += 1
-				#time.sleep(0.1)
 
 	class MonitorThread (threading.Thread):
 		def __init__(self, threadID, name, father):
@@ -275,7 +274,6 @@ class spider():
 			else:
 				monitor_output = self.show_status
 
-			#time.sleep(0.5)
 			#等待爬虫线程启动
 			while not any(t.is_alive() for t in spider_threads):
 				time.sleep(0.02)
@@ -294,7 +292,7 @@ class spider():
 					status['now_time'] = time.time()*1000
 					status['pages_get_by_threads'] = [t.pagesget for t in spider_threads]
 					status['got_pages'] = var['got_pages']
-					status['percentage'] = (var['got_pages']-1)/var['all_pages']
+					status['percentage'] = (var['got_pages'])/var['all_pages']
 					status['monitor_circles'] = monitor_circles
 					self.father.status.update(status)
 				if monitor_circles % 20 == 0:
@@ -326,7 +324,6 @@ class spider():
 		def show_status(self,percentage,monitor_circles,*args):
 			if monitor_circles % 30 == 0:
 				status = self.father.status
-				# print(status)
 				used_time = time.time() - status['start_time']/1000
 				if status['got_pages'] != 0:
 					left_time = (status['all_pages']/status['got_pages'] - 1) * used_time
