@@ -21,8 +21,8 @@ class spider():
 		self.status = {'process' : '__init__'}
 
 		#创建数据文件夹
-		if not os.path.exists(r'./log'):
-			os.makedirs(r'./log')
+		if not os.path.exists(r'./data'):
+			os.makedirs(r'./data')
 
 		self.set_logger(config)
 
@@ -37,8 +37,8 @@ class spider():
 
 	def set_logger(self,config):
 		#创建日志文件夹
-		if not os.path.exists(r'./data'):
-			os.makedirs(r'./data')
+		if not os.path.exists(r'./log'):
+			os.makedirs(r'./log')
 
 		#配置日志记录
 		FORMAT = '[%(asctime)s][%(levelname)s] - %(message)s'
@@ -148,6 +148,9 @@ class spider():
 				func_threads.append(http_thread)
 		#获取总页数
 		all_pages = self.get_all_pages()
+		if all_pages == -1:
+			self._logger.fatal("获取总页数失败，爬虫意外终止")
+			exit()
 		self.status['all_pages'] = all_pages
 		self.status['got_pages'] = 0
 		# 开启新线程
@@ -244,6 +247,7 @@ class spider():
 				logger.debug(logformat('第{}页-{}ms,{}ms'.format(pages,request_time,write_time)))
 				var['got_pages'] += 1
 				self.pagesget += 1
+				time.sleep(0.2)
 
 	class MonitorThread (threading.Thread):
 		def __init__(self, threadID, name, father):
