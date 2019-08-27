@@ -182,12 +182,30 @@ class spider():
 		self.start_spider()
 		self.wait()
 		self.close()
+
+	def set_custom_function(self,target):
+		self.SpiderThread.CUSTOM_FUNC = target
+		
+	#运行时控制函数
+	def set_pause(self,if_pause,thread_ids=0):
+		if thread_ids == 0:
+			thread_ids = range(self.thread_num)
+		else:
+			if max(map(int,thread_ids)) > self.thread_num:
+				raise RuntimeError()
+			thread_ids = map(lambda x:int(x)-1,thread_ids)
+		for id in thread_ids:
+			self._global_var['spider_threads'][id] = bool(if_pause)
 	
+	def get_pause(self):
+		return tuple(t.PAUSE for t in self._global_var['spider_threads'])
 
 	class SpiderThread (threading.Thread):
 		'''
 		爬虫线程类
 		'''
+		RUN_CUSTOM_FUNC = False
+		COLLECT_ITEMS = ('aid','view','danmaku','reply','favorite','coin','share','like','dislike',)
 		def __init__(self, threadID, name, father):
 			'''
 			爬虫线程类初始化函数
@@ -197,12 +215,16 @@ class spider():
 			self.threadID = threadID
 			self.name = name
 			self.pagesget = 0
+			self.PAUSE = False
 			self.father = father
 			self._logger = father._logger
 
 			self._logger.info(self.logformat("线程已创建！"))
 		def logformat(self,msg):
-			return 'ST-' + str(self.threadID) + ' - ' + msg
+			return '线程' + str(self.threadID) + ' - ' + msg
+
+		def CUSTOM_FUNC(self,res,father,logger):
+			logger.warning("用户选择运行自定义函数，但未指定自定义函数")
 
 		def run(self): 
 			#转存全局参数
@@ -215,7 +237,12 @@ class spider():
 			logger.debug(logformat('线程已开始运行！'))
 			time.sleep(0.1)
 			while len(pages_list) > 0 :
-				#获取页数
+				if self.PAUSE:
+					logger.info(logformat("线程已暂停"))
+					while self.PAUSE:
+						time.sleep(0.2)
+					logger.info(logformat("线程重新开始运行"))
+				#从列表获取页数
 				pages = pages_list.pop(0)
 				logger.debug(logformat("正在处理第{}页".format(pages)))
 				#连接服务器
@@ -235,11 +262,24 @@ class spider():
 				request_time =int( e_time - s_time )
 				
 				s_time = time.time()*1000
-				items = ('aid','view','danmaku','reply','favorite','coin','share','like','dislike',)
+				#items = ('aid','view','danmaku','reply','favorite','coin','share','like','dislike',)
 				out = ''
 				#解析数据
-				for vinfo in res.json()['data']['archives']:
-					out += ','.join(map(str,[vinfo['stat'][item] for item in items ])) + '\n'
+				try:
+					for vinfo in res.json()['data']['archives']:
+						out += ','.join(map(str,[vinfo['stat'][item] for item in self.COLLECT_ITEMS ])) + '\n'
+				except:
+					logger.error(logformat("第{}页数据解析失败".format(pages)))
+
+				if self.RUN_CUSTOM_FUNC:
+					try:
+						s_time = time.time() * 1000
+						self.CUSTOM_FUNC(res,father,logger)
+						e_time = time.time() * 1000
+					except:
+						logger.warning(logformat("第{}页自定义函数调用出错".format(pages)))
+					else:
+						logger.debug(logformat("第{}页自定义函数调用结束，用时:{}ms".format(pages,int(e_time-s_time))))
 				#写入数据
 				queue.put(out,block=False)
 				e_time = time.time()*1000
@@ -257,12 +297,14 @@ class spider():
 			self.father = father
 			self.SHOW_BAR = father.SHOW_BAR
 			self.QUITE_MODE = father.QUITE_MODE
+			self.BAR_LENGTH = 50
+			self.CIRCLE_INTERVAL = 0.1
 			self.http_port = father.http_port
 			self._logger = father._logger
 			self._logger.debug(self.logformat('线程已创建！'))
 		def run(self):
 			#设置进度条长度
-			self.BAR_LENGTH = 50
+			#BAR_LENGTH = self.BAR_LENGTH
 
 			#全局变量
 			status = {}
@@ -307,7 +349,7 @@ class spider():
 					#写入文件
 					while not queue.empty():
 						f.write(queue.get(block=False))
-				time.sleep(0.1)
+				time.sleep(self.CIRCLE_INTERVAL)
 				
 			#将队列中剩余数据写入文件
 			while not queue.empty():
@@ -333,9 +375,9 @@ class spider():
 					left_time = (status['all_pages']/status['got_pages'] - 1) * used_time
 				else:
 					left_time = 0
-				msg = "{}/{} ({} %) - {}used, {}left ".format(
+				msg = "{}/{} ({} %) - {}left ".format(
 						status['got_pages'], status['all_pages'], int(percentage*100), 
-						self.time_format(int(used_time)), self.time_format(int(left_time)))
+						self.time_format(int(left_time)))
 				self._logger.info(msg)
 				return
 			else :
@@ -347,7 +389,8 @@ class spider():
 				self.father.status.update({"post_state":True})
 			except:
 				self.father.status.update({"post_state":False})
-
+		
+		#用于将秒数转化为小时分钟格式
 		@staticmethod
 		def time_format(second):
 			second = int(second)
