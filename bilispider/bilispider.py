@@ -33,6 +33,15 @@ class spider():
 		self.thread_num = config.get('thread_num',2)
 		self.http_port = config.get('http',1214)
 
+		# 配置高级设置
+		advanced_setting = dict(config.get('advanced_setting',{}))
+		self.RUN_CUSTOM_FUNC = advanced_setting.get("RUN_CUSTOM_FUNC",False)
+		self.COLLECT_ITEMS = advanced_setting.get('COLLECT_ITEMS',('aid','view','danmaku','reply','favorite','coin','share','like','dislike',))
+		self.CIRCLE_INTERVAL = advanced_setting.get('CIRCLE_INTERVAL',0.1)
+		self.BAR_LENGTH = advanced_setting.get('BAR_LENGTH',50)
+		# if isinstance(advanced_setting.get('CUSTOM_FUNC',None),type(self.SpiderThread.CUSTOM_FUNC)):
+		# 	self.SpiderThread.CUSTOM_FUNC = advanced_setting['CUSTOM_FUNC']
+
 		self._logger.debug("构造完成")
 
 	def set_logger(self,config):
@@ -204,8 +213,6 @@ class spider():
 		'''
 		爬虫线程类
 		'''
-		RUN_CUSTOM_FUNC = False
-		COLLECT_ITEMS = ('aid','view','danmaku','reply','favorite','coin','share','like','dislike',)
 		def __init__(self, threadID, name, father):
 			'''
 			爬虫线程类初始化函数
@@ -218,6 +225,10 @@ class spider():
 			self.PAUSE = False
 			self.father = father
 			self._logger = father._logger
+
+			#转存高级设置
+			self.RUN_CUSTOM_FUNC = father.RUN_CUSTOM_FUNC
+			self.COLLECT_ITEMS = father.COLLECT_ITEMS
 
 			self._logger.info(self.logformat("线程已创建！"))
 		def logformat(self,msg):
@@ -297,10 +308,13 @@ class spider():
 			self.father = father
 			self.SHOW_BAR = father.SHOW_BAR
 			self.QUITE_MODE = father.QUITE_MODE
-			self.BAR_LENGTH = 50
-			self.CIRCLE_INTERVAL = 0.1
 			self.http_port = father.http_port
 			self._logger = father._logger
+
+			# 转存高级设置
+			self.BAR_LENGTH = father.BAR_LENGTH
+			self.CIRCLE_INTERVAL = father.CIRCLE_INTERVAL
+
 			self._logger.debug(self.logformat('线程已创建！'))
 		def run(self):
 			#设置进度条长度
@@ -350,12 +364,28 @@ class spider():
 					while not queue.empty():
 						f.write(queue.get(block=False))
 				time.sleep(self.CIRCLE_INTERVAL)
-				
-			#将队列中剩余数据写入文件
+			
+			#完成后再次执行一次循环
+			#显示进度条或输出状态
+			if not self.QUITE_MODE :
+				percentage = (var['got_pages'])/var['all_pages']
+				monitor_output(percentage,monitor_circles)
+			#更新状态
+			status['queue_len'] = queue.qsize()
+			status['now_time'] = time.time()*1000
+			status['pages_get_by_threads'] = [t.pagesget for t in spider_threads]
+			status['got_pages'] = var['got_pages']
+			status['percentage'] = (var['got_pages'])/var['all_pages']
+			status['monitor_circles'] = monitor_circles
+			self.father.status.update(status)
+			if self.http_port != 0:
+				#发送当前状态
+				threading.Thread(target=self.http_post_state,name='http_post',daemon=True).start()
+			#写入文件
 			while not queue.empty():
 				f.write(queue.get(block=False))
+			#最后一次循环完毕
 
-			monitor_output(1,monitor_circles)
 			print('\n')
 
 		def logformat(self,msg):
