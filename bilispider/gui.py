@@ -71,7 +71,7 @@ class gui_config():
 		tid_inf = load_tid_info()
 		tid_option = tuple(" - ".join(line) for line in filter(lambda line:line[1],tid_inf))
 		tid_entry.config(value=tid_option)
-		tid_entry.insert(0,config.get('tid',''))
+		tid_entry.insert(0,config.get('tid',None) if bool(config.get('tid',None)) else '')
 		tid_entry_focusout()
 		tid_entry.bind("<FocusOut>",tid_entry_focusout)
 		tid_entry.bind("<FocusIn>",tid_entry_focusin)
@@ -80,7 +80,7 @@ class gui_config():
 		url_entry.grid(row=1,column=1,columnspan=3,sticky=tk.W)
 		url_entry.bind("<Return>",get_tid)
 		url_entry.bind("<FocusIn>",url_entry_focusin)
-		
+
 		tid_info_label = ttk.Label(es_frame)
 		tid_info_label.grid(row=0,column=2,columnspan=2,padx=10,sticky=tk.W)
 		es_frame.columnconfigure(0,minsize=80)
