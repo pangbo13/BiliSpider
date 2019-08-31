@@ -84,3 +84,22 @@ def tid_scan(ending=200, start=0):
                     res['data']['archives'][0]['tname'],
                     res['data']['page']['count'],))
     return out
+
+def load_tid_info():
+    try:
+        from pkg_resources import resource_string
+        tid_info_str = resource_string('bilispider', 'data/tid.txt').decode()
+    except:
+        try:
+            from os import path
+            with open(path.join(path.dirname(__file__),'data/tid.txt'),'r') as f:
+                tid_info_str = f.read()
+        except:
+            print("无法载入")
+            return tuple()
+    #tid_info = tuple(map(lambda x:(int(x[0]),x[1]),[line.split(',') for line in tid_info_str.split('\r\n')]))
+    tid_info = [line.split(',') for line in tid_info_str.split('\r\n')]
+    return tid_info
+
+if __name__ == "__main__":
+    print(load_tid_info())

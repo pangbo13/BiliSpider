@@ -30,4 +30,6 @@ setuptools.setup(
         'BiliSpider = bilispider.__init__:main',
         ],},
     install_requires=['requests'],
+    package_data={
+        '': ['data/*.txt'],},
     )

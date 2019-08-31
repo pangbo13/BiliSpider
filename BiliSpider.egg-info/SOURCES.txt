@@ -17,3 +17,4 @@ bilispider.egg-info/dependency_links.txt
 bilispider.egg-info/entry_points.txt
 bilispider.egg-info/requires.txt
 bilispider.egg-info/top_level.txt
+bilispider/data/tid.txt

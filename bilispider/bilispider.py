@@ -369,7 +369,7 @@ class spider():
 			#显示进度条或输出状态
 			if not self.QUITE_MODE :
 				percentage = (var['got_pages'])/var['all_pages']
-				monitor_output(percentage,monitor_circles)
+				monitor_output(percentage,0)
 			#更新状态
 			status['queue_len'] = queue.qsize()
 			status['now_time'] = time.time()*1000
@@ -425,7 +425,7 @@ class spider():
 		def time_format(second):
 			second = int(second)
 			if second <= 0:
-				return 0
+				return '0s'
 			else :
 				time_lis = [0,0,0]
 				if second >= 3600 :

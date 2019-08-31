@@ -67,7 +67,7 @@ def start():
     else :
         del config['saveconfig']
 
-    if args.debug :
+    if config['debug'] :
         config['output'] = 2
 
     if config.get('tid',False):
