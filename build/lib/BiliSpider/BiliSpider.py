@@ -32,6 +32,7 @@ class spider():
 			self._logger.warning('分区id不一致，请检查设置')
 		self.thread_num = config.get('thread_num',2)
 		self.http_port = config.get('http',1214)
+		self.save_full = config.get('save_full',False)
 
 		# 配置高级设置
 		advanced_setting = dict(config.get('advanced_setting',{}))
@@ -94,16 +95,22 @@ class spider():
 		self._logger = logger
 	
 	#初始化函数
-	def prepare(self):
+	def ready(self):
 		#更新状态
 		self.status.update({'process' : 'prepare'})
 		
 		threadLock = threading.Lock()
 		q = queue.Queue()
 		#生成文件名
-		FILENAME = r'./data/'+'-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
-		#打开文件			
-		file = open(FILENAME, 'a+',encoding='utf-8')
+		FILENAME = '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
+		#打开文件
+		try:
+			file = open(r'./data/'+FILENAME, 'a+',encoding='utf-8')
+		except Exception as e:
+			import traceback
+			self._logger.error(traceback.format_exc())
+			self._logger.fatal("意外终止："+str(e))
+			exit()
 		#输出当前时间
 		file.write(time.ctime(time.time()) + '\n')
 		#导入请求头
@@ -115,10 +122,15 @@ class spider():
 			'spider_threads' : [],
 			'func_threads' : [],
 			'got_pages' : 0,
-			'file' : file,
+			'file' : [file,],
 			'url' : self.url,
 			'headers' : headers,
 			}
+
+		if self.save_full:
+			self._global_var['file'].append(open(r'./data/INFO - '+FILENAME,'w',encoding='utf-8'))
+
+
 	#获取总页数函数
 	def get_all_pages(self):
 		'''
@@ -132,9 +144,9 @@ class spider():
 			self._global_var['all_pages'] = all_pages
 			self._global_var['pages_list'] = list(range(1,all_pages+1))
 			return all_pages
-		except:
-			self._logger.error("获取总页数失败",exc_info = True)
-			self._logger.error("服务器返回内容：\n" + res.content.decode('utf-8'))
+		except Exception as e:
+			self._logger.error("获取总页数失败："+str(e))
+			self._logger.debug("服务器返回内容：\n" + res.content.decode('utf-8'))
 			return -1
 	def start_spider(self):
 		#更新状态
@@ -159,7 +171,8 @@ class spider():
 		all_pages = self.get_all_pages()
 		if all_pages == -1:
 			self._logger.fatal("获取总页数失败，爬虫意外终止")
-			exit()
+			self.set_fatal()
+			return -1
 		self.status['all_pages'] = all_pages
 		self.status['got_pages'] = 0
 		# 开启新线程
@@ -181,13 +194,14 @@ class spider():
 		'''
 		进行后续操作
 		'''
-		self._global_var['file'].close()
+		for f in self._global_var['file']:
+			f.close()
 	
 	def auto_run(self):
 		'''
 		自动开始执行
 		'''
-		self.prepare()
+		self.ready()
 		self.start_spider()
 		self.wait()
 		self.close()
@@ -209,6 +223,12 @@ class spider():
 	def get_pause(self):
 		return tuple(t.PAUSE for t in self._global_var['spider_threads'])
 
+	def set_fatal(self):
+		self.status.update({'process' : 'fatal'})
+		for t in self._global_var['spider_threads']:
+			t.EXIT = True
+		
+
 	class SpiderThread (threading.Thread):
 		'''
 		爬虫线程类
@@ -223,7 +243,9 @@ class spider():
 			self.name = name
 			self.pagesget = 0
 			self.PAUSE = False
+			self.EXIT = False
 			self.father = father
+			self.save_full = father.save_full
 			self._logger = father._logger
 
 			#转存高级设置
@@ -253,6 +275,9 @@ class spider():
 					while self.PAUSE:
 						time.sleep(0.2)
 					logger.info(logformat("线程重新开始运行"))
+				if self.EXIT:
+					logger.warning(logformat("接受到退出指令"))
+					return
 				#从列表获取页数
 				pages = pages_list.pop(0)
 				logger.debug(logformat("正在处理第{}页".format(pages)))
@@ -260,20 +285,22 @@ class spider():
 				s_time = time.time()*1000
 				try:
 					res = requests.get(url.format(pages),timeout = 2,headers = var['headers'])
-				except:
+				except requests.Timeout:
 					logger.error(logformat('第{}页连接超时'.format(pages)))
 					try:
 						time.sleep(2)
 						res = requests.get(url.format(pages),timeout = 10,headers = var['headers'])
-					except:
+					except requests.Timeout:
 						logger.error(logformat('第{}页连接第二次超时'.format(pages)))
 						pages_list.append(pages)
 						continue
+				except Exception as e:
+					logger.error(logformat("出现错误:"+str(e)))
 				e_time = time.time()*1000
 				request_time =int( e_time - s_time )
 				
 				s_time = time.time()*1000
-				#items = ('aid','view','danmaku','reply','favorite','coin','share','like','dislike',)
+
 				out = ''
 				#解析数据
 				try:
@@ -281,6 +308,21 @@ class spider():
 						out += ','.join(map(str,[vinfo['stat'][item] for item in self.COLLECT_ITEMS ])) + '\n'
 				except:
 					logger.error(logformat("第{}页数据解析失败".format(pages)))
+					if res.status_code == 412:
+						logger.fatal("服务器返回412")
+						self.father.set_fatal()
+						return
+					else:
+						continue
+
+				if self.save_full:
+					info_out = ''
+					for vinfo in res.json()['data']['archives']:
+						info_out += '\t'.join(map(str,[vinfo[item] for item in ('aid','title','videos','pubdate','duration')]))
+						info_out += '\t' + str(vinfo['owner']['mid']) + '\t' + vinfo['owner']['name']
+						info_out += '\t' + vinfo['pic'].rsplit(r'/',1)[-1][:-4]
+						info_out += '\t' + repr(vinfo['desc'])[1:-1] + '\n'
+					var['file'][1].write(info_out)
 
 				if self.RUN_CUSTOM_FUNC:
 					try:
@@ -324,7 +366,7 @@ class spider():
 			status = {}
 			var = self.father._global_var
 			queue = var['queue']
-			f = var['file']
+			f = var['file'][0]
 			spider_threads = var['spider_threads']
 			#启动时间
 			self.father.status['start_time'] = time.time()*1000
@@ -385,8 +427,8 @@ class spider():
 			while not queue.empty():
 				f.write(queue.get(block=False))
 			#最后一次循环完毕
-
-			print('\n')
+			if self.SHOW_BAR:
+				print('\n')
 
 		def logformat(self,msg):
 			return self.name + ' - ' + msg
@@ -425,7 +467,7 @@ class spider():
 		def time_format(second):
 			second = int(second)
 			if second <= 0:
-				return '0s'
+				return '0 s'
 			else :
 				time_lis = [0,0,0]
 				if second >= 3600 :

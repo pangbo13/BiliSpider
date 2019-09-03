@@ -85,6 +85,19 @@ def tid_scan(ending=200, start=0):
                     res['data']['page']['count'],))
     return out
 
+def updrade_tid_info(ending=200, start = 0):
+    from os.path import dirname
+    try:
+        info_list = tid_scan(ending,start)
+    except:
+        print("获取失败")
+        return
+    file_content = "\n".join([",".join(map(str,line[:2])) for line in info_list])
+    with open(dirname(__file__)+r'\data\tid.txt','w') as f:
+        f.write(file_content)
+    return info_list
+    
+
 def load_tid_info():
     try:
         from pkg_resources import resource_string
