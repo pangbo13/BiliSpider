@@ -18,7 +18,9 @@ class spider():
 		\t config:设置参数(dict类型)
 		'''
 		#更新状态
-		self.status = {'process' : '__init__'}
+		self.status = {'progress' : '__init__'}
+		from .version import version
+		self.status['version'] = version
 
 		#创建数据文件夹
 		if not os.path.exists(r'./data'):
@@ -97,12 +99,13 @@ class spider():
 	#初始化函数
 	def ready(self):
 		#更新状态
-		self.status.update({'process' : 'prepare'})
+		self.status['progress'] =  'prepare'
 		
 		threadLock = threading.Lock()
 		q = queue.Queue()
 		#生成文件名
-		FILENAME = '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
+		FILENAME = 'unfinished' + '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
+		#FILENAME = '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
 		#打开文件
 		try:
 			file = open(r'./data/'+FILENAME, 'a+',encoding='utf-8')
@@ -150,8 +153,9 @@ class spider():
 			return -1
 	def start_spider(self):
 		#更新状态
-		self.status.update({'process' : 'start'})
+		self.status['progress'] = 'start'
 		self.status['spider_thread_num'] = self.thread_num
+		self.status['http_mode'] = 0
 		# 创建新线程
 		spider_threads = self._global_var['spider_threads']
 		func_threads = self._global_var['func_threads']
@@ -165,8 +169,11 @@ class spider():
 				requests.get('http://localhost:{}'.format(self.http_port),timeout=0.2)
 			except:
 				from .httpserver import start_server
-				http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(self.http_port,))
+				http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(self.status,self.http_port))
 				func_threads.append(http_thread)
+				self.status['http_mode'] = 1
+			else:
+				self.status['http_mode'] = 2
 		#获取总页数
 		all_pages = self.get_all_pages()
 		if all_pages == -1:
@@ -186,7 +193,7 @@ class spider():
 		等待函数，阻塞当前进程至所有爬虫线程结束
 		'''
 		#更新状态
-		self.status.update({'process' : 'wait'})
+		self.status['progress'] = 'wait'
 		# 等待所有线程完成
 		self._global_var['func_threads'][0].join()
 
@@ -196,6 +203,7 @@ class spider():
 		'''
 		for f in self._global_var['file']:
 			f.close()
+			os.rename(f.name,f.name.replace('unfinished',''))
 	
 	def auto_run(self):
 		'''
@@ -224,7 +232,7 @@ class spider():
 		return tuple(t.PAUSE for t in self._global_var['spider_threads'])
 
 	def set_fatal(self):
-		self.status.update({'process' : 'fatal'})
+		self.status['progress'] = 'fatal'
 		for t in self._global_var['spider_threads']:
 			t.EXIT = True
 		
@@ -359,17 +367,14 @@ class spider():
 
 			self._logger.debug(self.logformat('线程已创建！'))
 		def run(self):
-			#设置进度条长度
-			#BAR_LENGTH = self.BAR_LENGTH
-
 			#全局变量
-			status = {}
+			status = self.father.status
 			var = self.father._global_var
 			queue = var['queue']
 			f = var['file'][0]
 			spider_threads = var['spider_threads']
 			#启动时间
-			self.father.status['start_time'] = time.time()*1000
+			status['start_time'] = time.time()*1000
 			
 			if self.SHOW_BAR:
 				monitor_output = self.show_bar
@@ -396,11 +401,11 @@ class spider():
 					status['got_pages'] = var['got_pages']
 					status['percentage'] = (var['got_pages'])/var['all_pages']
 					status['monitor_circles'] = monitor_circles
-					self.father.status.update(status)
+					#self.father.status.update(status)
 				if monitor_circles % 20 == 0:
-					if self.http_port != 0:
+					if status['http_mode'] == 2 and self.http_port != 0:
 						#发送当前状态
-						threading.Thread(target=self.http_post_state,name='http_post',daemon=True).start()
+						threading.Thread(target=self.http_post_status,name='http_post',daemon=True).start()
 				if monitor_circles % 50 == 0:
 					#写入文件
 					while not queue.empty():
@@ -419,10 +424,10 @@ class spider():
 			status['got_pages'] = var['got_pages']
 			status['percentage'] = (var['got_pages'])/var['all_pages']
 			status['monitor_circles'] = monitor_circles
-			self.father.status.update(status)
-			if self.http_port != 0:
+			#self.father.status.update(status)
+			if status['http_mode'] == 2 and self.http_port != 0:
 				#发送当前状态
-				threading.Thread(target=self.http_post_state,name='http_post',daemon=True).start()
+				threading.Thread(target=self.http_post_status,name='http_post',daemon=True).start()
 			#写入文件
 			while not queue.empty():
 				f.write(queue.get(block=False))
@@ -455,7 +460,7 @@ class spider():
 			else :
 				return
 
-		def http_post_state(self):
+		def http_post_status(self):
 			try:
 				requests.post('http://localhost:{}/post'.format(self.http_port),json=self.father.status)
 				self.father.status.update({"post_state":True})
@@ -467,7 +472,7 @@ class spider():
 		def time_format(second):
 			second = int(second)
 			if second <= 0:
-				return '0 s'
+				return '0s '
 			else :
 				time_lis = [0,0,0]
 				if second >= 3600 :

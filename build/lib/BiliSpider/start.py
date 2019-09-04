@@ -92,5 +92,5 @@ def start():
         s = spider(tid,config)
         s.auto_run()
 
-    from .tools import check_update
-    check_update()
+    #from .tools import check_update
+    #check_update()

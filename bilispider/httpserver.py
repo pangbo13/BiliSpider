@@ -16,11 +16,11 @@ HTML_ROOT_DIR = "./html"
 
 
 class HTTPServer(object):
-    def __init__(self):
+    def __init__(self,spider_status):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.spider_status = {}
+        self.spider_status = spider_status
         self.exit_mes = False
 
     def start(self):
@@ -62,11 +62,6 @@ class HTTPServer(object):
             response_body = json.dumps({'sys': self.get_sysinfo(),
                                         'spider': self.spider_status,
                                         },indent=4)
-        elif len(file_name) >= 5 and file_name[:5] == '/post':
-            self.set_status(json.loads(request_lines[-1].decode('utf-8')))
-            response_body = 'received!'
-
-            response_start_line = "HTTP/1.1 200 OK\r\n"
         elif len(file_name) >= 5 and file_name[:5] == '/exit':
             response_body = 'received exit command!'
             self.exit_mes = True
@@ -130,11 +125,11 @@ class HTTPServer(object):
         self.spider_status.update(status)
 
 
-def start_server(port=1214):
-    http_server = HTTPServer()
+def start_server(spider_status_,port=1214):
+    http_server = HTTPServer(spider_status_)
     http_server.bind(port)
     http_server.start()
 
 
 if __name__ == "__main__":
-    start_server()
+    start_server({})
