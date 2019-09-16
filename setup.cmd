@@ -1,4 +1,5 @@
 @echo off
+cd E:\github\BiliSpider
 rmdir /S /Q dist
 rmdir /S /Q build
 cd bilispider

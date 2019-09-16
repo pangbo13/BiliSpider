@@ -187,6 +187,7 @@ class spider():
 			t.start()
 		for t in func_threads:
 			t.start()
+		return 0
 	#等待函数
 	def wait(self):
 		'''
@@ -201,6 +202,7 @@ class spider():
 		'''
 		进行后续操作
 		'''
+		self.status['progress'] = 'close'
 		for f in self._global_var['file']:
 			f.close()
 			os.rename(f.name,f.name.replace('unfinished',''))
@@ -210,9 +212,11 @@ class spider():
 		自动开始执行
 		'''
 		self.ready()
-		self.start_spider()
-		self.wait()
-		self.close()
+		if self.start_spider() == 0 :
+			self.wait()
+			self.close()
+		else :
+			return -1
 
 	def set_custom_function(self,target):
 		self.SpiderThread.CUSTOM_FUNC = target
