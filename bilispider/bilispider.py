@@ -47,6 +47,9 @@ class spider():
 
 		self._logger.debug("构造完成")
 
+	def reload(self,rid,config={}):
+		self.__init__(rid,config)
+
 	def set_logger(self,config):
 		#创建日志文件夹
 		if not os.path.exists(r'./log'):
@@ -104,7 +107,7 @@ class spider():
 		threadLock = threading.Lock()
 		q = queue.Queue()
 		#生成文件名
-		FILENAME = 'unfinished' + '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
+		FILENAME = 'unfinished-' + '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
 		#FILENAME = '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
 		#打开文件
 		try:
@@ -166,14 +169,18 @@ class spider():
 		func_threads.append(self.MonitorThread(0, 'Monitor', self))
 		if self.http_port != 0:
 			try:
-				requests.get('http://localhost:{}'.format(self.http_port),timeout=0.2)
+				res = requests.get('http://localhost:{}/data'.format(self.http_port),timeout=0.2)
+				if res.json().get('spider').get('http_mode') == 0:
+					self.status['http_mode'] = 1
+				else :
+					self.status['http_mode'] = 2
 			except:
 				from .httpserver import start_server
-				http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(self.status,self.http_port))
+				http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(self,self.http_port))
 				func_threads.append(http_thread)
 				self.status['http_mode'] = 1
-			else:
-				self.status['http_mode'] = 2
+			# else:
+			# 	self.status['http_mode'] = 2
 		#获取总页数
 		all_pages = self.get_all_pages()
 		if all_pages == -1:
@@ -196,16 +203,27 @@ class spider():
 		#更新状态
 		self.status['progress'] = 'wait'
 		# 等待所有线程完成
-		self._global_var['func_threads'][0].join()
+		while self._global_var['func_threads'][0].is_alive():
+			try:
+				time.sleep(1)
+			except KeyboardInterrupt:
+				self.set_pause(1)
+				self.show_pause_menu()
+		# self._global_var['func_threads'][0].join()
 
 	def close(self):
 		'''
 		进行后续操作
 		'''
-		self.status['progress'] = 'close'
-		for f in self._global_var['file']:
-			f.close()
-			os.rename(f.name,f.name.replace('unfinished',''))
+		if self.status['progress'] not in ('exit','fatal'):
+			self.status['progress'] = 'close'
+			for f in self._global_var['file']:
+				f.close()
+				os.rename(f.name,f.name.replace('unfinished-',''))
+		else:
+			for f in self._global_var['file']:
+				f.close()
+				os.rename(f.name,f.name.replace('unfinished-',self.status['progress'] + '-'))
 	
 	def auto_run(self):
 		'''
@@ -229,8 +247,17 @@ class spider():
 			if max(map(int,thread_ids)) > self.thread_num:
 				raise RuntimeError()
 			thread_ids = map(lambda x:int(x)-1,thread_ids)
-		for id in thread_ids:
-			self._global_var['spider_threads'][id] = bool(if_pause)
+		
+		if if_pause:
+			for id in thread_ids:
+				if not self._global_var['spider_threads'][id].PAUSE:
+					self._global_var['spider_threads'][id].PAUSE = bool(1)
+			while not all(self._global_var['spider_threads'][id].PAUSE == 2 for id in thread_ids):
+				time.sleep(0.2)
+			self._logger.info('程序暂停')
+		else:
+			for id in thread_ids:
+				self._global_var['spider_threads'][id].PAUSE = bool(0)
 	
 	def get_pause(self):
 		return tuple(t.PAUSE for t in self._global_var['spider_threads'])
@@ -239,7 +266,56 @@ class spider():
 		self.status['progress'] = 'fatal'
 		for t in self._global_var['spider_threads']:
 			t.EXIT = True
+
+	def set_exit(self):
+		self.status['progress'] = 'exit'
+		for t in self._global_var['spider_threads']:
+			t.EXIT = True
 		
+	def debug_shell(self):
+		try:
+			while True:
+				cmd = input('>>>')
+				if cmd.rstrip().endswith(':'):
+					cmd_list = []
+					while cmd.strip():
+						cmd_list.append(cmd)
+						cmd = input()
+					cmd = '\n'.join(cmd_list)
+				try:
+					exec(cmd.expandtabs(4))
+				except :
+					import traceback
+					print('\n'.join(traceback.format_exc().splitlines()[3:]))
+		except KeyboardInterrupt:
+			print('\n退出')
+
+	def show_pause_menu(self):
+		if self.SHOW_BAR:
+			print()#换行
+		print('='*45)
+		while True:
+			print('请选择操作：')
+			print('1.继续')
+			print('2.退出')
+			print('3.进入调试模式')
+			choice = input('输入选择：')
+			if choice == '1':
+				self.set_pause(0)
+				break
+			elif choice == '2':
+				if input('确认退出吗？(y/n)').lower() == 'y':
+					self.set_exit()
+					self.set_pause(0)
+					break
+				else:
+					print('操作已取消')
+			elif choice == '3':
+				print('按下ctrl+C可退出')
+				self.debug_shell()
+			else:
+				print('输入选项无效，',end='')
+			print('='*45)
 
 	class SpiderThread (threading.Thread):
 		'''
@@ -284,8 +360,9 @@ class spider():
 			while len(pages_list) > 0 :
 				if self.PAUSE:
 					logger.info(logformat("线程已暂停"))
+					self.PAUSE = 2
 					while self.PAUSE:
-						time.sleep(0.2)
+						time.sleep(0.2) 
 					logger.info(logformat("线程重新开始运行"))
 				if self.EXIT:
 					logger.warning(logformat("接受到退出指令"))
@@ -372,13 +449,16 @@ class spider():
 			self._logger.debug(self.logformat('线程已创建！'))
 		def run(self):
 			#全局变量
-			status = self.father.status
-			var = self.father._global_var
+			father = self.father
+			status = father.status
+			var = father._global_var
 			queue = var['queue']
 			f = var['file'][0]
 			spider_threads = var['spider_threads']
 			#启动时间
 			status['start_time'] = time.time()*1000
+			status['pause_time'] = 0
+
 			
 			if self.SHOW_BAR:
 				monitor_output = self.show_bar
@@ -391,12 +471,12 @@ class spider():
 
 			monitor_circles = -1
 			while any(t.is_alive() for t in spider_threads):
+				if all(father.get_pause()):
+					pause_start = time.time()*1000
+					while all(father.get_pause()):
+						time.sleep(self.CIRCLE_INTERVAL)
+					status['pause_time'] += time.time()*1000 - pause_start
 				monitor_circles += 1
-				if monitor_circles % 5 == 0:
-					#显示进度条或输出状态
-					if not self.QUITE_MODE :
-						percentage = (var['got_pages'])/var['all_pages']
-						monitor_output(percentage,monitor_circles)
 				if monitor_circles % 2 == 0:
 					#更新状态
 					status['queue_len'] = queue.qsize()
@@ -406,6 +486,11 @@ class spider():
 					status['percentage'] = (var['got_pages'])/var['all_pages']
 					status['monitor_circles'] = monitor_circles
 					#self.father.status.update(status)
+				if monitor_circles % 5 == 0:
+					#显示进度条或输出状态
+					if not self.QUITE_MODE :
+						percentage = (var['got_pages'])/var['all_pages']
+						monitor_output(percentage,monitor_circles)
 				if monitor_circles % 20 == 0:
 					if status['http_mode'] == 2 and self.http_port != 0:
 						#发送当前状态
@@ -451,7 +536,7 @@ class spider():
 		def show_status(self,percentage,monitor_circles,*args):
 			if monitor_circles % 30 == 0:
 				status = self.father.status
-				used_time = time.time() - status['start_time']/1000
+				used_time = self.CIRCLE_INTERVAL * status['monitor_circles']
 				if status['got_pages'] != 0:
 					left_time = (status['all_pages']/status['got_pages'] - 1) * used_time
 				else:

@@ -37,6 +37,8 @@ def start():
         from .version import version
         print(version)
         return 2
+    else:
+        del config['version']
 
     if args.safemode:
         print("进入安全模式后，仅使用单线程和必要模块，除tid外的参数将被忽略，可以减少资源消耗和被封禁IP的风险，但效率会变低")
@@ -84,13 +86,18 @@ def start():
     del config['url']
 
 
-    print(config)
+    # print(config)
     from .bilispider import spider
-    for tid in config['tid']:
-        print('当前处理分区： ' + str(tid))
-        #实例化
-        s = spider(tid,config)
-        s.auto_run()
+    tid = config['tid'][0]
+    print('当前处理分区： ' + str(tid))
+    #实例化
+    s = spider(tid,config)
+    s.auto_run()
+    if len(config['tid']) > 1 :
+        for tid in config['tid'][1:]:
+            print('当前处理分区： ' + str(tid))
+            s.reload(tid,config)
+            s.auto_run()
 
     #from .tools import check_update
     #check_update()

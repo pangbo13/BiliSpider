@@ -114,5 +114,23 @@ def load_tid_info():
     tid_info = [line.split(',') for line in tid_info_str.split('\r\n')]
     return tid_info
 
+def debug_shell():
+    try:
+        while True:
+            cmd = input('>>>')
+            if cmd.rstrip().endswith(':'):
+                cmd_list = []
+                while cmd.strip():
+                    cmd_list.append(cmd)
+                    cmd = input()
+                cmd = '\n'.join(cmd_list)
+            try:
+                exec(cmd)
+            except :
+                import traceback
+                print('\n'.join(traceback.format_exc().splitlines()[3:]))
+    except KeyboardInterrupt:
+        print('\n退出')
+
 if __name__ == "__main__":
     print(load_tid_info())
