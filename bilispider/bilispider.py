@@ -151,7 +151,7 @@ class spider():
 			self._global_var['pages_list'] = list(range(1,all_pages+1))
 			return all_pages
 		except Exception as e:
-			self._logger.error("获取总页数失败："+str(e))
+			self._logger.fatal("获取总页数失败："+str(e))
 			self._logger.debug("服务器返回内容：\n" + res.content.decode('utf-8'))
 			return -1
 	def start_spider(self):
@@ -179,8 +179,6 @@ class spider():
 				http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(self,self.http_port))
 				func_threads.append(http_thread)
 				self.status['http_mode'] = 1
-			# else:
-			# 	self.status['http_mode'] = 2
 		#获取总页数
 		all_pages = self.get_all_pages()
 		if all_pages == -1:
@@ -366,6 +364,7 @@ class spider():
 					logger.info(logformat("线程重新开始运行"))
 				if self.EXIT:
 					logger.warning(logformat("接受到退出指令"))
+					self.EXIT = 2
 					return
 				#从列表获取页数
 				pages = pages_list.pop(0)
@@ -513,7 +512,6 @@ class spider():
 			status['got_pages'] = var['got_pages']
 			status['percentage'] = (var['got_pages'])/var['all_pages']
 			status['monitor_circles'] = monitor_circles
-			#self.father.status.update(status)
 			if status['http_mode'] == 2 and self.http_port != 0:
 				#发送当前状态
 				threading.Thread(target=self.http_post_status,name='http_post',daemon=True).start()
@@ -521,6 +519,8 @@ class spider():
 			while not queue.empty():
 				f.write(queue.get(block=False))
 			#最后一次循环完毕
+			if status['progress'] == 'fatal' :
+				self._logger.fatal('爬虫意外退出')
 			if self.SHOW_BAR:
 				print('\n')
 

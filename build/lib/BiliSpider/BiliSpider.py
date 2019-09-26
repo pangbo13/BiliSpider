@@ -366,6 +366,7 @@ class spider():
 					logger.info(logformat("线程重新开始运行"))
 				if self.EXIT:
 					logger.warning(logformat("接受到退出指令"))
+					self.EXIT = 2
 					return
 				#从列表获取页数
 				pages = pages_list.pop(0)
@@ -513,7 +514,6 @@ class spider():
 			status['got_pages'] = var['got_pages']
 			status['percentage'] = (var['got_pages'])/var['all_pages']
 			status['monitor_circles'] = monitor_circles
-			#self.father.status.update(status)
 			if status['http_mode'] == 2 and self.http_port != 0:
 				#发送当前状态
 				threading.Thread(target=self.http_post_status,name='http_post',daemon=True).start()
@@ -521,6 +521,8 @@ class spider():
 			while not queue.empty():
 				f.write(queue.get(block=False))
 			#最后一次循环完毕
+			if status['progress'] == 'fatal' :
+				self._logger.fatal('爬虫意外退出')
 			if self.SHOW_BAR:
 				print('\n')
 
