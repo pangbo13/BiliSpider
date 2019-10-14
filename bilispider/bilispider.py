@@ -176,7 +176,7 @@ class spider():
 					self.status['http_mode'] = 2
 			except:
 				from .httpserver import start_server
-				http_thread = threading.Thread(target=start_server,daemon=True,name='http',args=(self,self.http_port))
+				http_thread = threading.Thread(target=start_server,daemon=True,name='HTTPserver',args=(self,self.http_port))
 				func_threads.append(http_thread)
 				self.status['http_mode'] = 1
 		#获取总页数
@@ -269,6 +269,12 @@ class spider():
 		self.status['progress'] = 'exit'
 		for t in self._global_var['spider_threads']:
 			t.EXIT = True
+
+	def get_http_thread(self):
+		if len(self._global_var['func_threads']) != 1:
+			return self._global_var['func_threads'][1]
+		else:
+			return None
 		
 	def debug_shell(self):
 		try:
