@@ -527,6 +527,8 @@ class spider():
 			#最后一次循环完毕
 			if status['progress'] == 'fatal' :
 				self._logger.fatal('爬虫意外退出')
+			else:
+				self._logger.info('运行结束')
 			if self.SHOW_BAR:
 				print('\n')
 

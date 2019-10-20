@@ -2,6 +2,12 @@
 import requests
 import time
 def safemode(rid):
+	if not rid or not str(rid).strip().isalnum():
+		print("分区id无效")
+		return
+	else:
+		rid = rid.strip()
+
 	start_time = time.time()
 
 	print('正在获取总页数')

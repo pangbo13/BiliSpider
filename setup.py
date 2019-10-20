@@ -29,7 +29,9 @@ setuptools.setup(
     entry_points = {'console_scripts': [
         'BiliSpider = bilispider.__init__:main',
         ],},
-    install_requires=['requests'],
+    install_requires=['requests','psutil'],
     package_data={
-        '': ['data/*.txt'],},
+        '': ['data/*.txt'],
+        # 'html':['data/html/*'],
+        },
     )
