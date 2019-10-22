@@ -8,7 +8,7 @@ with open('./bilispider/version.py','w') as f:
     f.write(out)
 
 with open('README.md','r',encoding='utf-8') as fh:
-    long_description = fh.read()
+    long_description = fh.read().replace(r"img/",r"https://raw.githubusercontent.com/pangbo13/BiliSpider/master/img/")
 
 setuptools.setup(
     name = 'bilispider',
