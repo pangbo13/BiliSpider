@@ -174,11 +174,16 @@ class spider():
 					self.status['http_mode'] = 1
 				else :
 					self.status['http_mode'] = 2
+					from .tcppost import BilispiderSocket
+					spidersocket = BilispiderSocket("localhost",1214,self)
+					# spidersocket.connect()
+					func_threads.append(spidersocket)
 			except:
 				from .httpserver import start_server
 				http_thread = threading.Thread(target=start_server,daemon=True,name='HTTPserver',args=(self,self.http_port))
 				func_threads.append(http_thread)
 				self.status['http_mode'] = 1
+		#http_mode 0-内置初始化 1-内置 2-外部
 		#获取总页数
 		all_pages = self.get_all_pages()
 		if all_pages == -1:

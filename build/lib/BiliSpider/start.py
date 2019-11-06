@@ -21,7 +21,7 @@ def start():
     parser.add_argument("--logmode",help="指定日志保存模式：0-不保存；1-仅保存错误；2-保存所有输出",type=int,choices=(0,1,2),default=1)
     parser.add_argument("--debug",help="启用调试",action='store_true')
     parser.add_argument("--saveconfig","-sc",metavar="FILE_PATH",help="根据参数保存配置文件并退出",type=str)
-    parser.add_argument("--thread_num","-tn",help="指定线程数，默认为2",default=2,type=int)
+    parser.add_argument("--thread_num","-n",help="指定线程数，默认为2",default=2,type=int)
     parser.add_argument("--http", help="设置http状态数据发送端口，0为关闭，默认为1214，若检测到服务器未开启将启动内置服务器",type=int,default=1214)
     parser.add_argument("--save_full",help="保存视频标题、简介、up相关信息",action='store_true')
     parser.add_argument("--gui","-g",help="打开可视化界面",action='store_true')

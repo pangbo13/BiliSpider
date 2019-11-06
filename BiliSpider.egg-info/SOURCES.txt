@@ -9,6 +9,7 @@ bilispider/headers.py
 bilispider/httpserver.py
 bilispider/safemode.py
 bilispider/start.py
+bilispider/tcppost.py
 bilispider/tools.py
 bilispider/version.py
 bilispider.egg-info/PKG-INFO

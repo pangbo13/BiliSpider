@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: bilispider
-Version: 0.8.8
+Version: 0.8.9
 Summary: A spider of Bilibili
 Home-page: https://github.com/pangbo13/BiliSpider/
 Author: pangbo
@@ -51,7 +51,7 @@ Description:
         	+ 2-保存所有输出
         + `--debug`：启用调试
         + `--saveconfig`,`-sc`：根据参数保存配置文件并退出 *注意：使用该参数不会爬取数据*
-        + `--thread_num`,`-tn`：指定线程数，默认为2 
+        + `--thread_num`,`-n`：指定线程数，默认为2 
         	+  ***注意：线程数过多可能导致IP封禁***
         + `--gui`,`-g`：打开可视化界面 *(测试)*
         + `--safemode`：安全模式
@@ -70,11 +70,11 @@ Description:
         
         # GUI指南
         ## 基本设置
-        ![GUI窗口](img/gui_2.png "GUI主窗口")
+        ![GUI窗口](https://raw.githubusercontent.com/pangbo13/BiliSpider/master/img/gui_2.png "GUI主窗口")
         + 在 从url识别中 输入av号或视频地址，点击确认获取分区信息
         + 点击确认以提交参数
         ## 高级设置
-        ![GUI窗口高级选项](img/gui_3.png "GUI主窗口高级选项")
+        ![GUI窗口高级选项](https://raw.githubusercontent.com/pangbo13/BiliSpider/master/img/gui_3.png "GUI主窗口高级选项")
         
         # HTTP服务器
         + 运行内置httpsever模块或使用[BiliSpider_HTTPserver](https://github.com/pangbo13/BiliSpider_HTTPserver "在github中打开BiliSpider_HTTPserver")启动服务器

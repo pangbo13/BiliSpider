@@ -36,7 +36,7 @@ class HTTPServer(object):
         处理客户端请求
         """
         # 获取客户端请求数据
-        request_data = client_socket.recv(1024)
+        request_data = client_socket.recv(1024).decode()
         request_lines = request_data.splitlines()
         if len(request_lines) > 0:
             # 解析请求报文
@@ -51,7 +51,7 @@ class HTTPServer(object):
         
         # 提取用户请求的文件名
         file_name = re.match(
-            r"\w+ +(/[^ ]*) ", request_start_line.decode("utf-8")).group(1)
+            r"\w+ +(/[^ ]*) ", request_start_line).group(1)
 
         if "/" == file_name:
             file_name = "/index.html"
