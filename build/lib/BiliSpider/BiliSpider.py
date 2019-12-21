@@ -176,7 +176,6 @@ class spider():
 					self.status['http_mode'] = 2
 					from .tcppost import BilispiderSocket
 					spidersocket = BilispiderSocket("localhost",1214,self)
-					# spidersocket.connect()
 					func_threads.append(spidersocket)
 			except:
 				from .httpserver import start_server
@@ -344,12 +343,15 @@ class spider():
 			self.father = father
 			self.save_full = father.save_full
 			self._logger = father._logger
+			self.session = requests.Session()
 
 			#转存高级设置
 			self.RUN_CUSTOM_FUNC = father.RUN_CUSTOM_FUNC
 			self.COLLECT_ITEMS = father.COLLECT_ITEMS
 
 			self._logger.info(self.logformat("线程已创建！"))
+		def __del__(self):
+			self.session.close()
 		def logformat(self,msg):
 			return '线程' + str(self.threadID) + ' - ' + msg
 
@@ -383,12 +385,12 @@ class spider():
 				#连接服务器
 				s_time = time.time()*1000
 				try:
-					res = requests.get(url.format(pages),timeout = 2,headers = var['headers'])
+					res = self.session.get(url.format(pages),timeout = 2,headers = var['headers'])
 				except requests.Timeout:
 					logger.error(logformat('第{}页连接超时'.format(pages)))
 					try:
 						time.sleep(2)
-						res = requests.get(url.format(pages),timeout = 10,headers = var['headers'])
+						res = self.session.get(url.format(pages),timeout = 10,headers = var['headers'])
 					except requests.Timeout:
 						logger.error(logformat('第{}页连接第二次超时'.format(pages)))
 						pages_list.append(pages)
