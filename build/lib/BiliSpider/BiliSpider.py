@@ -42,8 +42,6 @@ class spider():
 		self.COLLECT_ITEMS = advanced_setting.get('COLLECT_ITEMS',('aid','view','danmaku','reply','favorite','coin','share','like','dislike',))
 		self.CIRCLE_INTERVAL = advanced_setting.get('CIRCLE_INTERVAL',0.1)
 		self.BAR_LENGTH = advanced_setting.get('BAR_LENGTH',50)
-		# if isinstance(advanced_setting.get('CUSTOM_FUNC',None),type(self.SpiderThread.CUSTOM_FUNC)):
-		# 	self.SpiderThread.CUSTOM_FUNC = advanced_setting['CUSTOM_FUNC']
 
 		self._logger.debug("构造完成")
 
@@ -108,7 +106,6 @@ class spider():
 		q = queue.Queue()
 		#生成文件名
 		FILENAME = 'unfinished-' + '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
-		#FILENAME = '-'.join(map(str,tuple(time.localtime())[:5])) + '({})'.format(self.rid) + '.txt'
 		#打开文件
 		try:
 			file = open(r'./data/'+FILENAME, 'a+',encoding='utf-8')
@@ -176,7 +173,6 @@ class spider():
 					self.status['http_mode'] = 2
 					from .tcppost import BilispiderSocket
 					spidersocket = BilispiderSocket("localhost",1214,self)
-					# spidersocket.connect()
 					func_threads.append(spidersocket)
 			except:
 				from .httpserver import start_server
@@ -212,7 +208,6 @@ class spider():
 			except KeyboardInterrupt:
 				self.set_pause(1)
 				self.show_pause_menu()
-		# self._global_var['func_threads'][0].join()
 
 	def close(self):
 		'''
@@ -243,8 +238,13 @@ class spider():
 		self.SpiderThread.CUSTOM_FUNC = target
 		
 	#运行时控制函数
-	def set_pause(self,if_pause,thread_ids=0):
-		if thread_ids == 0:
+	def set_pause(self,if_pause,thread_ids=()):
+		'''
+		此函数用于暂停爬虫线程
+		if_pause用于标识是否暂停目标线程
+		thread_ids为操作的目标线程id，留空则操作所有线程
+		'''
+		if not thread_ids:
 			thread_ids = range(self.thread_num)
 		else:
 			if max(map(int,thread_ids)) > self.thread_num:
@@ -254,28 +254,38 @@ class spider():
 		if if_pause:
 			for id in thread_ids:
 				if not self._global_var['spider_threads'][id].PAUSE:
-					self._global_var['spider_threads'][id].PAUSE = bool(1)
+					self._global_var['spider_threads'][id].PAUSE = True
+			#等待所有线程暂停
 			while not all(self._global_var['spider_threads'][id].PAUSE == 2 for id in thread_ids):
 				time.sleep(0.2)
 			self._logger.info('程序暂停')
 		else:
 			for id in thread_ids:
-				self._global_var['spider_threads'][id].PAUSE = bool(0)
+				self._global_var['spider_threads'][id].PAUSE = False
 	
 	def get_pause(self):
 		return tuple(t.PAUSE for t in self._global_var['spider_threads'])
 
 	def set_fatal(self):
+		'''
+		此函数用于将爬虫状态设置为fatal，不建议通过此函数退出爬虫
+		'''
 		self.status['progress'] = 'fatal'
 		for t in self._global_var['spider_threads']:
 			t.EXIT = True
 
 	def set_exit(self):
+		'''
+		此函数用于中途退出爬虫
+		'''
 		self.status['progress'] = 'exit'
 		for t in self._global_var['spider_threads']:
 			t.EXIT = True
 
 	def get_http_thread(self):
+		'''
+		返回服务器线程对象
+		'''
 		if len(self._global_var['func_threads']) != 1:
 			return self._global_var['func_threads'][1]
 		else:
@@ -344,12 +354,15 @@ class spider():
 			self.father = father
 			self.save_full = father.save_full
 			self._logger = father._logger
+			self.session = requests.Session()
 
 			#转存高级设置
 			self.RUN_CUSTOM_FUNC = father.RUN_CUSTOM_FUNC
 			self.COLLECT_ITEMS = father.COLLECT_ITEMS
 
 			self._logger.info(self.logformat("线程已创建！"))
+		def __del__(self):
+			self.session.close()
 		def logformat(self,msg):
 			return '线程' + str(self.threadID) + ' - ' + msg
 
@@ -383,12 +396,12 @@ class spider():
 				#连接服务器
 				s_time = time.time()*1000
 				try:
-					res = requests.get(url.format(pages),timeout = 2,headers = var['headers'])
+					res = self.session.get(url.format(pages),timeout = 2,headers = var['headers'])
 				except requests.Timeout:
 					logger.error(logformat('第{}页连接超时'.format(pages)))
 					try:
 						time.sleep(2)
-						res = requests.get(url.format(pages),timeout = 10,headers = var['headers'])
+						res = self.session.get(url.format(pages),timeout = 10,headers = var['headers'])
 					except requests.Timeout:
 						logger.error(logformat('第{}页连接第二次超时'.format(pages)))
 						pages_list.append(pages)
@@ -486,6 +499,8 @@ class spider():
 					while all(father.get_pause()):
 						time.sleep(self.CIRCLE_INTERVAL)
 					status['pause_time'] += time.time()*1000 - pause_start
+					if status['progress'] == 'exit':
+						break
 				monitor_circles += 1
 				if monitor_circles % 2 == 0:
 					#更新状态
@@ -495,7 +510,6 @@ class spider():
 					status['got_pages'] = var['got_pages']
 					status['percentage'] = (var['got_pages'])/var['all_pages']
 					status['monitor_circles'] = monitor_circles
-					#self.father.status.update(status)
 				if monitor_circles % 5 == 0:
 					#显示进度条或输出状态
 					if not self.QUITE_MODE :
@@ -513,7 +527,7 @@ class spider():
 			
 			#完成后再次执行一次循环
 			#显示进度条或输出状态
-			if not self.QUITE_MODE :
+			if not self.QUITE_MODE and not status['progress'] == 'exit':
 				percentage = (var['got_pages'])/var['all_pages']
 				monitor_output(percentage,0)
 			#更新状态
