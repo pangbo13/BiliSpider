@@ -85,7 +85,7 @@ def tid_scan(ending=200, start=0):
                     res['data']['page']['count'],))
     return out
 
-def updrade_tid_info(ending=200, start = 0):
+def update_tid_info(ending=200, start = 0):
     from os.path import dirname
     try:
         info_list = tid_scan(ending,start)

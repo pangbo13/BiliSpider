@@ -109,11 +109,14 @@ class spider():
 		#打开文件
 		try:
 			file = open(r'./data/'+FILENAME, 'a+',encoding='utf-8')
+		except IOError as e:
+			self._logger.fatal("文件操作错误："+str(e))
+			return -1
 		except Exception as e:
 			import traceback
 			self._logger.error(traceback.format_exc())
 			self._logger.fatal("意外终止："+str(e))
-			exit()
+			return -2
 		#输出当前时间
 		file.write(time.ctime(time.time()) + '\n')
 		#导入请求头
@@ -133,6 +136,8 @@ class spider():
 		if self.save_full:
 			self._global_var['file'].append(open(r'./data/INFO - '+FILENAME,'w',encoding='utf-8'))
 
+		return 0
+
 
 	#获取总页数函数
 	def get_all_pages(self):
@@ -144,13 +149,27 @@ class spider():
 			res = requests.get(self.url.format(r'1&ps=1'))
 			all_pages = int(res.json()['data']['page']['count']/50) + 1
 			self._logger.info("分区下总页数：{}".format(all_pages))
-			self._global_var['all_pages'] = all_pages
-			self._global_var['pages_list'] = list(range(1,all_pages+1))
 			return all_pages
 		except Exception as e:
 			self._logger.fatal("获取总页数失败："+str(e))
 			self._logger.debug("服务器返回内容：\n" + res.content.decode('utf-8'))
 			return -1
+
+	@staticmethod
+	def get_pages_generator(all_panges):
+		page = 0
+		error_list = []
+		while page<all_panges or len(error_list)>0:
+			if page < all_panges:
+				page += 1
+				e = (yield page)
+				if e != None:
+					error_list.append(e)
+			else:
+				yield error_list.pop()
+
+
+
 	def start_spider(self):
 		#更新状态
 		self.status['progress'] = 'start'
@@ -186,6 +205,8 @@ class spider():
 			self._logger.fatal("获取总页数失败，爬虫意外终止")
 			self.set_fatal()
 			return -1
+		self._global_var['all_pages'] = all_pages
+		self._global_var['pages_generator'] = self.get_pages_generator(all_pages)
 		self.status['all_pages'] = all_pages
 		self.status['got_pages'] = 0
 		# 开启新线程
@@ -195,6 +216,7 @@ class spider():
 			t.start()
 		return 0
 	#等待函数
+
 	def wait(self):
 		'''
 		等待函数，阻塞当前进程至所有爬虫线程结束
@@ -227,12 +249,15 @@ class spider():
 		'''
 		自动开始执行
 		'''
-		self.ready()
-		if self.start_spider() == 0 :
-			self.wait()
-			self.close()
-		else :
+		status_code = self.ready()
+		if status_code != 0:
 			return -1
+		status_code = self.start_spider()
+		if status_code != 0:
+			return -2
+		self.wait()
+		self.close()
+		return 0
 
 	def set_custom_function(self,target):
 		self.SpiderThread.CUSTOM_FUNC = target
@@ -268,7 +293,8 @@ class spider():
 
 	def set_fatal(self):
 		'''
-		此函数用于将爬虫状态设置为fatal，不建议通过此函数退出爬虫
+		此函数用于将爬虫状态设置为fatal，主要针对爬虫内部使用，不建议用户通过此函数退出爬虫
+		若需要人为退出爬虫，建议使用 set_exit 函数
 		'''
 		self.status['progress'] = 'fatal'
 		for t in self._global_var['spider_threads']:
@@ -276,7 +302,7 @@ class spider():
 
 	def set_exit(self):
 		'''
-		此函数用于中途退出爬虫
+		此函数用于用户控制中途退出爬虫
 		'''
 		self.status['progress'] = 'exit'
 		for t in self._global_var['spider_threads']:
@@ -374,12 +400,13 @@ class spider():
 			var = self.father._global_var
 			url = var['url']
 			queue = var['queue']
-			pages_list = var['pages_list']
+			pages_generator = var['pages_generator']
 			logger = self._logger
 			logformat = self.logformat
+			error_page = None
 			logger.debug(logformat('线程已开始运行！'))
 			time.sleep(0.1)
-			while len(pages_list) > 0 :
+			while True :
 				if self.PAUSE:
 					logger.info(logformat("线程已暂停"))
 					self.PAUSE = 2
@@ -391,23 +418,27 @@ class spider():
 					self.EXIT = 2
 					return
 				#从列表获取页数
-				pages = pages_list.pop(0)
-				logger.debug(logformat("正在处理第{}页".format(pages)))
-				#连接服务器
+				try:
+					page_id = pages_generator.send(error_page)
+				except StopIteration:
+					return
+				logger.debug(logformat("正在处理第{}页".format(page_id)))
 				s_time = time.time()*1000
 				try:
-					res = self.session.get(url.format(pages),timeout = 2,headers = var['headers'])
+					res = self.session.get(url.format(page_id),timeout = 2,headers = var['headers'])
 				except requests.Timeout:
-					logger.error(logformat('第{}页连接超时'.format(pages)))
+					logger.error(logformat('第{}页连接超时'.format(page_id)))
 					try:
 						time.sleep(2)
-						res = self.session.get(url.format(pages),timeout = 10,headers = var['headers'])
+						res = self.session.get(url.format(page_id),timeout = 10,headers = var['headers'])
 					except requests.Timeout:
-						logger.error(logformat('第{}页连接第二次超时'.format(pages)))
-						pages_list.append(pages)
+						logger.error(logformat('第{}页连接第二次超时'.format(page_id)))
+						error_page = page_id
 						continue
 				except Exception as e:
 					logger.error(logformat("出现错误:"+str(e)))
+					error_page = page_id
+					continue
 				e_time = time.time()*1000
 				request_time =int( e_time - s_time )
 				
@@ -419,7 +450,7 @@ class spider():
 					for vinfo in res.json()['data']['archives']:
 						out += ','.join(map(str,[vinfo['stat'][item] for item in self.COLLECT_ITEMS ])) + '\n'
 				except:
-					logger.error(logformat("第{}页数据解析失败".format(pages)))
+					logger.error(logformat("第{}页数据解析失败".format(page_id)))
 					if res.status_code == 412:
 						logger.fatal("服务器返回412")
 						self.father.set_fatal()
@@ -442,14 +473,14 @@ class spider():
 						self.CUSTOM_FUNC(res,father,logger)
 						e_time = time.time() * 1000
 					except:
-						logger.warning(logformat("第{}页自定义函数调用出错".format(pages)))
+						logger.warning(logformat("第{}页自定义函数调用出错".format(page_id)))
 					else:
-						logger.debug(logformat("第{}页自定义函数调用结束，用时:{}ms".format(pages,int(e_time-s_time))))
+						logger.debug(logformat("第{}页自定义函数调用结束，用时:{}ms".format(page_id,int(e_time-s_time))))
 				#写入数据
 				queue.put(out,block=False)
 				e_time = time.time()*1000
 				write_time =int( e_time - s_time )
-				logger.debug(logformat('第{}页-{}ms,{}ms'.format(pages,request_time,write_time)))
+				logger.debug(logformat('第{}页-{}ms,{}ms'.format(page_id,request_time,write_time)))
 				var['got_pages'] += 1
 				self.pagesget += 1
 				time.sleep(0.2)
@@ -549,7 +580,7 @@ class spider():
 			else:
 				self._logger.info('运行结束')
 			if self.SHOW_BAR:
-				print('\n')
+				print()
 
 		def logformat(self,msg):
 			return self.name + ' - ' + msg

@@ -60,7 +60,7 @@ def start():
 
     if not config['tid'] and not args.url:
         parser.print_help()
-        exit()
+        return
 
     if args.saveconfig:
         import json
