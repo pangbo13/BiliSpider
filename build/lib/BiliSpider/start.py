@@ -77,7 +77,7 @@ def start():
         #将获取的字符串以逗号拆分
         #再通过map函数迭代转化为int
         #转化为set以去除重复项
-        config['tid'] = tuple(set(map(int,config['tid'].split(','))))
+        config['tid'] = tuple(sorted(set(map(int,config['tid'].split(',')))))
 
     if args.url and not config['tid'] : 
         tid_info = get_tid_by_url(aid_decode(args.url))

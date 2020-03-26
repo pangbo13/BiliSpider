@@ -1,4 +1,5 @@
 README.md
+setup.cfg
 setup.py
 bilispider/__init__.py
 bilispider/__main__.py

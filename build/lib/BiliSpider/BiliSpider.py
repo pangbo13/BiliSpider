@@ -31,7 +31,7 @@ class spider():
 		self.url = 'https://api.bilibili.com/x/web-interface/newlist?rid={}&pn={}'.format(rid,'{}')
 		self.rid = rid
 		if rid not in config['tid']:
-			self._logger.warning('分区id不一致，请检查设置')
+			self.__logger.warning('分区id不一致，请检查设置')
 		self.thread_num = config.get('thread_num',2)
 		self.http_port = config.get('http',1214)
 		self.save_full = config.get('save_full',False)
@@ -43,10 +43,15 @@ class spider():
 		self.CIRCLE_INTERVAL = advanced_setting.get('CIRCLE_INTERVAL',0.1)
 		self.BAR_LENGTH = advanced_setting.get('BAR_LENGTH',50)
 
-		self._logger.debug("构造完成")
+		self.__logger.debug("构造完成")
 
 	def reload(self,rid,config={}):
-		self.__init__(rid,config)
+		self.status = {'progress' : '__init__'}
+		self.url = 'https://api.bilibili.com/x/web-interface/newlist?rid={}&pn={}'.format(rid,'{}')
+		self.rid = rid
+		if rid not in config['tid']:
+			self.__logger.warning('分区id不一致，请检查设置')
+		self.__logger.debug("重置完成")
 
 	def set_logger(self,config):
 		#创建日志文件夹
@@ -56,13 +61,13 @@ class spider():
 		#配置日志记录
 		FORMAT = '[%(asctime)s][%(levelname)s] - %(message)s'
 		FILENAME = r'./log/'+'-'.join(map(str,tuple(time.localtime())[:5])) + '.log'
-		logger = logging.getLogger(__name__)
+		root_logger = logging.getLogger(__package__)
 		if config.get('debug',False):
-			logger.setLevel(level = logging.DEBUG)
+			root_logger.setLevel(level = logging.DEBUG)
 		elif config.get('logmode',1) ==0 and config.get('output',1) == 0:
-			logger.setLevel(level = logging.FATAL)
+			root_logger.setLevel(level = logging.FATAL)
 		else:
-			logger.setLevel(level = logging.INFO)
+			root_logger.setLevel(level = logging.INFO)
 
 		#配置输出日志文件
 		file_log_level = (0,logging.ERROR,logging.DEBUG)[config.get('logmode',1)]
@@ -70,7 +75,7 @@ class spider():
 			handler = logging.FileHandler(FILENAME,encoding='utf-8')
 			handler.setLevel(file_log_level)
 			handler.setFormatter(logging.Formatter(fmt = FORMAT,datefmt='%H:%M:%S'))
-			logger.addHandler(handler)
+			root_logger.addHandler(handler)
 
 		#配置控制台日志输出
 		console = logging.StreamHandler()
@@ -79,7 +84,7 @@ class spider():
 		else:
 			console.setLevel(logging.FATAL)
 		console.setFormatter(logging.Formatter(fmt = FORMAT,datefmt='%H:%M:%S'))
-		logger.addHandler(console)
+		root_logger.addHandler(console)
 
 		#配置进度条
 		if config.get('output',1) == 1:
@@ -93,9 +98,10 @@ class spider():
 			self.QUITE_MODE = False
 
 		#日志配置完成
-		logger.info("日志配置完毕")
+		root_logger.info("日志配置完毕")
 
-		self._logger = logger
+		self.__root_logger = root_logger
+		self.__logger = logging.getLogger(__name__)
 	
 	#初始化函数
 	def ready(self):
@@ -110,12 +116,12 @@ class spider():
 		try:
 			file = open(r'./data/'+FILENAME, 'a+',encoding='utf-8')
 		except IOError as e:
-			self._logger.fatal("文件操作错误："+str(e))
+			self.__logger.fatal("文件操作错误："+str(e))
 			return -1
 		except Exception as e:
 			import traceback
-			self._logger.error(traceback.format_exc())
-			self._logger.fatal("意外终止："+str(e))
+			self.__logger.error(traceback.format_exc())
+			self.__logger.fatal("意外终止："+str(e))
 			return -2
 		#输出当前时间
 		file.write(time.ctime(time.time()) + '\n')
@@ -144,15 +150,15 @@ class spider():
 		'''
 		获取总页数函数
 		'''
-		self._logger.debug("开始获取总页数")
+		self.__logger.debug("开始获取总页数")
 		try:
 			res = requests.get(self.url.format(r'1&ps=1'))
 			all_pages = int(res.json()['data']['page']['count']/50) + 1
-			self._logger.info("分区下总页数：{}".format(all_pages))
+			self.__logger.info("分区下总页数：{}".format(all_pages))
 			return all_pages
 		except Exception as e:
-			self._logger.fatal("获取总页数失败："+str(e))
-			self._logger.debug("服务器返回内容：\n" + res.content.decode('utf-8'))
+			self.__logger.fatal("获取总页数失败："+str(e))
+			self.__logger.debug("服务器返回内容：\n" + res.content.decode('utf-8'))
 			return -1
 
 	@staticmethod
@@ -202,7 +208,7 @@ class spider():
 		#获取总页数
 		all_pages = self.get_all_pages()
 		if all_pages == -1:
-			self._logger.fatal("获取总页数失败，爬虫意外终止")
+			self.__logger.fatal("获取总页数失败，爬虫意外终止")
 			self.set_fatal()
 			return -1
 		self._global_var['all_pages'] = all_pages
@@ -283,7 +289,7 @@ class spider():
 			#等待所有线程暂停
 			while not all(self._global_var['spider_threads'][id].PAUSE == 2 for id in thread_ids):
 				time.sleep(0.2)
-			self._logger.info('程序暂停')
+			self.__logger.info('程序暂停')
 		else:
 			for id in thread_ids:
 				self._global_var['spider_threads'][id].PAUSE = False
@@ -379,14 +385,14 @@ class spider():
 			self.EXIT = False
 			self.father = father
 			self.save_full = father.save_full
-			self._logger = father._logger
+			self.__logger = logging.getLogger(__name__)
 			self.session = requests.Session()
 
 			#转存高级设置
 			self.RUN_CUSTOM_FUNC = father.RUN_CUSTOM_FUNC
 			self.COLLECT_ITEMS = father.COLLECT_ITEMS
 
-			self._logger.info(self.logformat("线程已创建！"))
+			self.__logger.info(self.logformat("线程已创建！"))
 		def __del__(self):
 			self.session.close()
 		def logformat(self,msg):
@@ -401,7 +407,7 @@ class spider():
 			url = var['url']
 			queue = var['queue']
 			pages_generator = var['pages_generator']
-			logger = self._logger
+			logger = self.__logger
 			logformat = self.logformat
 			error_page = None
 			logger.debug(logformat('线程已开始运行！'))
@@ -461,7 +467,7 @@ class spider():
 				if self.save_full:
 					info_out = ''
 					for vinfo in res.json()['data']['archives']:
-						info_out += '\t'.join(map(str,[vinfo[item] for item in ('aid','title','videos','pubdate','duration')]))
+						info_out += '\t'.join(map(str,[vinfo[item] for item in ('aid','bvid','title','videos','pubdate','duration')]))
 						info_out += '\t' + str(vinfo['owner']['mid']) + '\t' + vinfo['owner']['name']
 						info_out += '\t' + vinfo['pic'].rsplit(r'/',1)[-1][:-4]
 						info_out += '\t' + repr(vinfo['desc'])[1:-1] + '\n'
@@ -494,13 +500,13 @@ class spider():
 			self.SHOW_BAR = father.SHOW_BAR
 			self.QUITE_MODE = father.QUITE_MODE
 			self.http_port = father.http_port
-			self._logger = father._logger
+			self.__logger = logging.getLogger(__name__)
 
 			# 转存高级设置
 			self.BAR_LENGTH = father.BAR_LENGTH
 			self.CIRCLE_INTERVAL = father.CIRCLE_INTERVAL
 
-			self._logger.debug(self.logformat('线程已创建！'))
+			self.__logger.debug(self.logformat('线程已创建！'))
 		def run(self):
 			#全局变量
 			father = self.father
@@ -576,9 +582,9 @@ class spider():
 				f.write(queue.get(block=False))
 			#最后一次循环完毕
 			if status['progress'] == 'fatal' :
-				self._logger.fatal('爬虫意外退出')
+				self.__logger.fatal('爬虫意外退出')
 			else:
-				self._logger.info('运行结束')
+				self.__logger.info('运行结束')
 			if self.SHOW_BAR:
 				print()
 
@@ -602,7 +608,7 @@ class spider():
 				msg = "{}/{} ({} %) - {}left ".format(
 						status['got_pages'], status['all_pages'], int(percentage*100), 
 						self.time_format(int(left_time)))
-				self._logger.info(msg)
+				self.__logger.info(msg)
 				return
 			else :
 				return

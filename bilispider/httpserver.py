@@ -1,5 +1,4 @@
-# coding:utf-8
-
+#coding=utf-8
 ########
 # 参考：https://www.cnblogs.com/xinyangsdut/p/9099623.html
 ########
@@ -8,6 +7,7 @@ import socket
 import re
 import psutil
 import json
+import logging
 
 from threading import Thread
 
@@ -21,12 +21,14 @@ class HTTPServer(object):
         self.server_socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.father = father
-        self.exit_mes = False
+        self.__exit_mes = False
+        self.__logger = logging.getLogger(__name__)
 
     def start(self):
         self.server_socket.listen(128)
-        while not self.exit_mes:
-            client_socket = self.server_socket.accept()[0]
+        while not self.__exit_mes:
+            client_socket,client_addr = self.server_socket.accept()
+            self.__logger.debug("接受来自{}的连接".format(client_addr[0]))
             handle_client_process = Thread(
                 target=self.handle_client, args=(client_socket,))
             handle_client_process.start()
@@ -64,7 +66,7 @@ class HTTPServer(object):
                                         },indent=4)
         elif len(file_name) >= 5 and file_name[:5] == '/exit':
             response_body = 'received exit command!'
-            self.exit_mes = True
+            self.__exit_mes = True
             from time import sleep
             response_start_line = "HTTP/1.1 200 OK\r\n"
         else:
@@ -98,6 +100,7 @@ class HTTPServer(object):
 
     def bind(self, port):
         self.server_socket.bind(("", port))
+        self.__logger.debug("服务器已绑定端口{}".format(port))
 
     @classmethod
     def get_sysinfo(self):
@@ -128,6 +131,6 @@ def start_server(spider,port=1214):
     http_server.bind(port)
     http_server.start()
 
-
-if __name__ == "__main__":
-    start_server({})
+if __debug__:
+    if __name__ == "__main__":
+        start_server({})
